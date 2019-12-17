@@ -3,6 +3,7 @@ package info.bschambers.toothpick.dev;
 import info.bschambers.toothpick.game.GameBase;
 import info.bschambers.toothpick.game.SlideShowProgram;
 import info.bschambers.toothpick.ui.ATMenu;
+import info.bschambers.toothpick.ui.ATMenuItemSimple;
 import info.bschambers.toothpick.ui.swing.SwingFrame;
 import java.awt.Image;
 import java.io.IOException;
@@ -30,6 +31,11 @@ public class App {
 
     private ATMenu makeMenu() {
         ATMenu root = new ATMenu("MAIN MENU");
+        root.add(new ATMenuItemSimple("start game",
+                                      () -> System.out.println("start game")));
+        root.add(new ATMenuItemSimple("options",
+                                      () -> System.out.println("options")));
+        root.add(new ATMenuItemSimple("EXIT", () -> window.exit()));
         return root;
     }
 
