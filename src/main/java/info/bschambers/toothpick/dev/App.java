@@ -1,10 +1,16 @@
 package info.bschambers.toothpick.dev;
 
-import info.bschambers.toothpick.game.GameBase;
-import info.bschambers.toothpick.game.SlideShowProgram;
-import info.bschambers.toothpick.ui.ATMenu;
-import info.bschambers.toothpick.ui.ATMenuItemSimple;
-import info.bschambers.toothpick.ui.swing.SwingFrame;
+import info.bschambers.toothpick.actor.Actor;
+import info.bschambers.toothpick.actor.ActorController;
+import info.bschambers.toothpick.actor.LinesForm;
+import info.bschambers.toothpick.actor.TPLine;
+import info.bschambers.toothpick.game.*;
+import info.bschambers.toothpick.game.ToothpickProgram;
+import info.bschambers.toothpick.geom.Line;
+import info.bschambers.toothpick.geom.Pt;
+import info.bschambers.toothpick.ui.TPMenu;
+import info.bschambers.toothpick.ui.TPMenuItemSimple;
+import info.bschambers.toothpick.ui.swing.SwingUI;
 import java.awt.Image;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,13 +19,15 @@ import javax.imageio.ImageIO;
 
 public class App {
 
-    private SwingFrame window;
+    private SwingUI window;
     private GameBase base;
+    private SlideShowProgram introSlides;
 
     public App() {
-        window = new SwingFrame("Atomic Toothpick Test");
+        window = new SwingUI("Atomic Toothpick Test");
         base = new GameBase();
-        base.setProgram(makeSlideShow());
+        introSlides = makeSlideShow();
+        base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
     }
@@ -29,18 +37,58 @@ public class App {
         base.run();
     }
 
-    private ATMenu makeMenu() {
-        ATMenu root = new ATMenu("MAIN MENU");
-        root.add(new ATMenuItemSimple("start game",
+    private TPMenu makeMenu() {
+        TPMenu root = new TPMenu("MAIN MENU");
+        root.add(new TPMenuItemSimple("new game",
                                       () -> System.out.println("start game")));
-        root.add(new ATMenuItemSimple("options",
-                                      () -> System.out.println("options")));
-        root.add(new ATMenuItemSimple("EXIT", () -> window.exit()));
+        root.add(new TPMenuItemSimple("info",
+                                      () -> System.out.println("info")));
+        root.add(makeMenuPresetProgram());
+        root.add(new TPMenuItemSimple("load program from file",
+                                      () -> System.out.println("load game")));
+        root.add(new TPMenuItemSimple("global options",
+                                      () -> System.out.println("global options")));
+        root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
         return root;
     }
 
+    private TPMenu makeMenuPresetProgram() {
+        TPMenu m = new TPMenu("preset programs");
+        m.add(makeProgramMenu(introSlides));
+        m.add(makeProgramMenu(makeProgStaticToothpick()));
+        m.add(new TPMenuItemSimple("simple toothpick game",
+                                   () -> System.out.println("toothpick game")));
+        m.add(new TPMenuItemSimple("toothpick mixed enemies game",
+                                   () -> System.out.println("mixed toothpicks")));
+        m.add(new TPMenuItemSimple("scrolling map game",
+                                   () -> System.out.println("scrolling map")));
+        m.add(new TPMenuItemSimple("boss battle game",
+                                   () -> System.out.println("boss battle")));
+        m.add(new TPMenuItemSimple("powerups game",
+                                   () -> System.out.println("powerups")));
+        m.add(new TPMenuItemSimple("levels game",
+                                   () -> System.out.println("levels")));
+        m.add(new TPMenuItemSimple("ribbon game",
+                                   () -> System.out.println("ribbon")));
+        m.add(new TPMenuItemSimple("asteroids game",
+                                   () -> System.out.println("asteroid")));
+        return m;
+    }
+
+    private TPMenu makeProgramMenu(GameProgram prog) {
+        TPMenu m = new TPMenu(prog.getTitle());
+        m.add(new TPMenuItemSimple("run", () -> {
+                    base.setProgram(prog);
+        }));
+        m.add(new TPMenuItemSimple("reset game",
+                                   () -> System.out.println("reset program")));
+        m.add(new TPMenuItemSimple("open in editor",
+                                   () -> System.out.println("open program in editor")));
+        return m;
+    }
+
     private SlideShowProgram makeSlideShow() {
-        SlideShowProgram slides = new SlideShowProgram();
+        SlideShowProgram slides = new SlideShowProgram("Intro Slides");
         addSlide(slides, "toothpick_slideshow01.png");
         addSlide(slides, "toothpick_slideshow02.png");
         addSlide(slides, "toothpick_slideshow03.png");
@@ -59,6 +107,22 @@ public class App {
             System.out.println("ERROR - COULDN'T LOAD IMAGE: " + filename);
             e.printStackTrace();
         }
+    }
+
+    private ToothpickProgram makeProgStaticToothpick() {
+        ToothpickProgram tpp = new ToothpickProgram("Static Toothpicks");
+        tpp.addActor(makeLineActor(45, 20, 200, 30));
+        tpp.addActor(makeLineActor(200, 350, 400, 250));
+        tpp.addActor(makeLineActor(500, 175, 550, 400));
+        return tpp;
+    }
+
+    private Actor makeLineActor(double x1, double y1, double x2, double y2) {
+        Pt start = new Pt(x1, y1);
+        Pt end = new Pt(x2, y2);
+        LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
+        ActorController ctrl = new ActorController();
+        return new Actor(form, ctrl);
     }
 
     public static void main(String[] args) {
