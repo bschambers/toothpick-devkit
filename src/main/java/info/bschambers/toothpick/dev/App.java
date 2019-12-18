@@ -10,6 +10,7 @@ import info.bschambers.toothpick.geom.Line;
 import info.bschambers.toothpick.geom.Pt;
 import info.bschambers.toothpick.ui.TPMenu;
 import info.bschambers.toothpick.ui.TPMenuItemSimple;
+import info.bschambers.toothpick.ui.TPMenuItemIncr;
 import info.bschambers.toothpick.ui.swing.SwingUI;
 import java.awt.Image;
 import java.io.IOException;
@@ -46,8 +47,7 @@ public class App {
         root.add(makeMenuPresetProgram());
         root.add(new TPMenuItemSimple("load program from file",
                                       () -> System.out.println("load game")));
-        root.add(new TPMenuItemSimple("global options",
-                                      () -> System.out.println("global options")));
+        root.add(makeGlobalMenu());
         root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
         return root;
     }
@@ -123,6 +123,14 @@ public class App {
         LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
         ActorController ctrl = new ActorController();
         return new Actor(form, ctrl);
+    }
+
+    private TPMenu makeGlobalMenu() {
+        TPMenu m = new TPMenu("Global Options");
+        m.add(new TPMenuItemIncr("goal fps", () -> base.getFpsGoal() + "",
+                                 () -> base.setFpsGoal(base.getFpsGoal() - 1),
+                                 () -> base.setFpsGoal(base.getFpsGoal() + 1)));
+        return m;
     }
 
     public static void main(String[] args) {
