@@ -1,0 +1,21 @@
+* About
+
+This package contains development tools and examples for the Toothpick game engine.
+
+* Build
+
+$ gradlew jar
+
+* Dependencies
+
+- Java 8
+- JUnit
+- toothpick-engine
+
+NOTE: build.gradle locates the toothpick-engine library at ~/lib/toothpick-engine.jar.
+
+* License
+
+Copyright 2019-present B. S. Chambers.
+
+Distributed under GPL, version 3.
