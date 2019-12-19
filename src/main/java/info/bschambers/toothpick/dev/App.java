@@ -1,11 +1,7 @@
 package info.bschambers.toothpick.dev;
 
-import info.bschambers.toothpick.actor.Actor;
-import info.bschambers.toothpick.actor.ActorController;
-import info.bschambers.toothpick.actor.LinesForm;
-import info.bschambers.toothpick.actor.TPLine;
+import info.bschambers.toothpick.actor.*;
 import info.bschambers.toothpick.game.*;
-import info.bschambers.toothpick.game.ToothpickProgram;
 import info.bschambers.toothpick.geom.Line;
 import info.bschambers.toothpick.geom.Pt;
 import info.bschambers.toothpick.ui.TPMenu;
@@ -13,10 +9,12 @@ import info.bschambers.toothpick.ui.TPMenuItemSimple;
 import info.bschambers.toothpick.ui.TPMenuItemIncr;
 import info.bschambers.toothpick.ui.swing.SwingUI;
 import java.awt.Image;
+import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import javax.imageio.ImageIO;
+import info.bschambers.toothpick.actor.PlayerController;
 
 public class App {
 
@@ -56,8 +54,7 @@ public class App {
         TPMenu m = new TPMenu("preset programs");
         m.add(makeProgramMenu(introSlides));
         m.add(makeProgramMenu(makeProgStaticToothpick()));
-        m.add(new TPMenuItemSimple("simple toothpick game",
-                                   () -> System.out.println("toothpick game")));
+        m.add(makeProgramMenu(makeProgSimpleToothpickGame()));
         m.add(new TPMenuItemSimple("toothpick mixed enemies game",
                                    () -> System.out.println("mixed toothpicks")));
         m.add(new TPMenuItemSimple("scrolling map game",
@@ -72,6 +69,8 @@ public class App {
                                    () -> System.out.println("ribbon")));
         m.add(new TPMenuItemSimple("asteroids game",
                                    () -> System.out.println("asteroid")));
+        m.add(new TPMenuItemSimple("gravity orbit game",
+                                   () -> System.out.println("orbit")));
         return m;
     }
 
@@ -80,10 +79,19 @@ public class App {
         m.add(new TPMenuItemSimple("run", () -> {
                     base.setProgram(prog);
         }));
-        m.add(new TPMenuItemSimple("reset game",
-                                   () -> System.out.println("reset program")));
+        m.add(makePlayerMenu(prog));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
+        return m;
+    }
+
+    private TPMenu makePlayerMenu(GameProgram prog) {
+        TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
+        m.add(new TPMenuItemSimple("controller type", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("controller keys", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("thrust", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("type", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("presets players", () -> System.out.println("...")));
         return m;
     }
 
@@ -114,6 +122,22 @@ public class App {
         tpp.addActor(makeLineActor(45, 20, 200, 30));
         tpp.addActor(makeLineActor(200, 350, 400, 250));
         tpp.addActor(makeLineActor(500, 175, 550, 400));
+        return tpp;
+    }
+
+    private ToothpickProgram makeProgSimpleToothpickGame() {
+        ToothpickProgram tpp = new ToothpickProgram("Simple Toothpicks Game");
+        tpp.setBGColor(Color.BLUE);
+        // drones
+        tpp.addActor(makeLineActor(10, 200, 20, 300));
+        tpp.addActor(makeLineActor(30, 310, 50, 250));
+        tpp.addActor(makeLineActor(300, 300, 550, 450));
+        // player
+        PlayerController pc = new EightWayController();
+        Actor p = makeLineActor(50, 50, 150, 150);
+        p.setController(pc);
+        tpp.addActor(p);
+        tpp.setPlayer(pc);
         return tpp;
     }
 
