@@ -19,12 +19,12 @@ import info.bschambers.toothpick.actor.PlayerController;
 public class App {
 
     private SwingUI window;
-    private GameBase base;
+    private TPBase base;
     private SlideShowProgram introSlides;
 
     public App() {
         window = new SwingUI("Atomic Toothpick Test");
-        base = new GameBase();
+        base = new TPBase();
         introSlides = makeSlideShow();
         base.setProgram(introSlides);
         base.setUI(window);
@@ -74,7 +74,7 @@ public class App {
         return m;
     }
 
-    private TPMenu makeProgramMenu(GameProgram prog) {
+    private TPMenu makeProgramMenu(TPProgram prog) {
         TPMenu m = new TPMenu(prog.getTitle());
         m.add(new TPMenuItemSimple("run", () -> {
                     base.setProgram(prog);
@@ -85,7 +85,7 @@ public class App {
         return m;
     }
 
-    private TPMenu makePlayerMenu(GameProgram prog) {
+    private TPMenu makePlayerMenu(TPProgram prog) {
         TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
         m.add(new TPMenuItemSimple("controller type", () -> System.out.println("...")));
         m.add(new TPMenuItemSimple("controller keys", () -> System.out.println("...")));
@@ -134,19 +134,19 @@ public class App {
         tpp.addActor(makeLineActor(300, 300, 550, 450));
         // player
         PlayerController pc = new EightWayController();
-        Actor p = makeLineActor(50, 50, 150, 150);
+        TPActor p = makeLineActor(50, 50, 150, 150);
         p.setController(pc);
         tpp.addActor(p);
         tpp.setPlayer(pc);
         return tpp;
     }
 
-    private Actor makeLineActor(double x1, double y1, double x2, double y2) {
+    private TPActor makeLineActor(double x1, double y1, double x2, double y2) {
         Pt start = new Pt(x1, y1);
         Pt end = new Pt(x2, y2);
         LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
-        ActorController ctrl = new ActorController();
-        return new Actor(form, ctrl);
+        TPController ctrl = new TPController();
+        return new TPActor(form, ctrl);
     }
 
     private TPMenu makeGlobalMenu() {
@@ -154,6 +154,10 @@ public class App {
         m.add(new TPMenuItemIncr("goal fps", () -> base.getFpsGoal() + "",
                                  () -> base.setFpsGoal(base.getFpsGoal() - 1),
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
+        m.add(new TPMenuItemSimple("show intersection points",
+                                   () -> System.out.println("intersections")));
+        m.add(new TPMenuItemSimple("show diagnostics",
+                                   () -> System.out.println("diagnostics")));
         return m;
     }
 
