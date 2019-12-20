@@ -2,19 +2,15 @@ package info.bschambers.toothpick.dev;
 
 import info.bschambers.toothpick.actor.*;
 import info.bschambers.toothpick.game.*;
-import info.bschambers.toothpick.geom.Line;
-import info.bschambers.toothpick.geom.Pt;
-import info.bschambers.toothpick.ui.TPMenu;
-import info.bschambers.toothpick.ui.TPMenuItemSimple;
-import info.bschambers.toothpick.ui.TPMenuItemIncr;
+import info.bschambers.toothpick.geom.*;
+import info.bschambers.toothpick.ui.*;
 import info.bschambers.toothpick.ui.swing.SwingUI;
-import java.awt.Image;
 import java.awt.Color;
+import java.awt.Image;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import javax.imageio.ImageIO;
-import info.bschambers.toothpick.actor.PlayerController;
 
 public class App {
 
@@ -80,6 +76,8 @@ public class App {
                     base.setProgram(prog);
         }));
         m.add(makePlayerMenu(prog));
+        m.add(new TPMenuItemSimple("collision detection type",
+                                   () -> System.out.println("collision detection")));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
         return m;
@@ -119,9 +117,16 @@ public class App {
 
     private ToothpickProgram makeProgStaticToothpick() {
         ToothpickProgram tpp = new ToothpickProgram("Static Toothpicks");
+        // drones
         tpp.addActor(makeLineActor(45, 20, 200, 30));
         tpp.addActor(makeLineActor(200, 350, 400, 250));
         tpp.addActor(makeLineActor(500, 175, 550, 400));
+        // player
+        PlayerController pc = new EightWayController();
+        TPActor p = makeLineActor(50, 50, 150, 150);
+        p.setController(pc);
+        tpp.addActor(p);
+        tpp.setPlayer(pc);
         return tpp;
     }
 
@@ -129,9 +134,15 @@ public class App {
         ToothpickProgram tpp = new ToothpickProgram("Simple Toothpicks Game");
         tpp.setBGColor(Color.BLUE);
         // drones
-        tpp.addActor(makeLineActor(10, 200, 20, 300));
-        tpp.addActor(makeLineActor(30, 310, 50, 250));
-        tpp.addActor(makeLineActor(300, 300, 550, 450));
+        TPActor a = makeLineActor(10, 200, 20, 300);
+        a.setController(new SimpleController(new Pt(3, 1)));
+        tpp.addActor(a);
+        TPActor b = makeLineActor(30, 310, 50, 250);
+        b.setController(new SimpleController(new Pt(2, -1)));
+        tpp.addActor(b);
+        TPActor c = makeLineActor(300, 300, 550, 450);
+        c.setController(new SimpleController(new Pt(-1, -2)));
+        tpp.addActor(c);
         // player
         PlayerController pc = new EightWayController();
         TPActor p = makeLineActor(50, 50, 150, 150);
@@ -144,8 +155,12 @@ public class App {
     private TPActor makeLineActor(double x1, double y1, double x2, double y2) {
         Pt start = new Pt(x1, y1);
         Pt end = new Pt(x2, y2);
+        Pt pos = Geom.midPoint(start, end);
+        start = start.add(pos.invert());
+        end = end.add(pos.invert());
         LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
         TPController ctrl = new TPController();
+        ctrl.setPos(pos);
         return new TPActor(form, ctrl);
     }
 
@@ -156,6 +171,8 @@ public class App {
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
         m.add(new TPMenuItemSimple("show intersection points",
                                    () -> System.out.println("intersections")));
+        m.add(new TPMenuItemSimple("show bounding boxes",
+                                   () -> System.out.println("bounding boxes")));
         m.add(new TPMenuItemSimple("show diagnostics",
                                    () -> System.out.println("diagnostics")));
         return m;
