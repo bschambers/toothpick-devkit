@@ -85,12 +85,28 @@ public class App {
 
     private TPMenu makePlayerMenu(TPProgram prog) {
         TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
-        m.add(new TPMenuItemSimple("controller type", () -> System.out.println("...")));
+        m.add(makePlayerControllerMenu(prog));
         m.add(new TPMenuItemSimple("controller keys", () -> System.out.println("...")));
         m.add(new TPMenuItemSimple("thrust", () -> System.out.println("...")));
         m.add(new TPMenuItemSimple("type", () -> System.out.println("...")));
         m.add(new TPMenuItemSimple("presets players", () -> System.out.println("...")));
         return m;
+    }
+
+    private TPMenu makePlayerControllerMenu(TPProgram prog) {
+        TPMenu m = new TPMenu(() -> "Change Player-Controller (current = "
+                              + prog.getPlayerController().getClass().getSimpleName() + ")");
+        m.add(makeControllerSwitcherItem(prog, new EightWayController()));
+        m.add(makeControllerSwitcherItem(prog, new EightWayInertiaController()));
+        m.add(makeControllerSwitcherItem(prog, new ThrustInertiaController()));
+        return m;
+    }
+
+    private TPMenuItem makeControllerSwitcherItem(TPProgram prog, PlayerController ctrl) {
+
+        return new TPMenuItemSimple(ctrl.getClass().getSimpleName(),
+                                    () -> prog.changePlayerController(ctrl));
+
     }
 
     private SlideShowProgram makeSlideShow() {
@@ -122,11 +138,8 @@ public class App {
         tpp.addActor(makeLineActor(200, 350, 400, 250));
         tpp.addActor(makeLineActor(500, 175, 550, 400));
         // player
-        PlayerController pc = new EightWayController();
-        TPActor p = makeLineActor(50, 50, 150, 150);
-        p.setController(pc);
-        tpp.addActor(p);
-        tpp.setPlayer(pc);
+        TPActor player = makePlayerActor(150, 150, 250, 150);
+        tpp.setPlayer(player);
         return tpp;
     }
 
@@ -144,11 +157,8 @@ public class App {
         c.setController(new SimpleController(new Pt(-1, -2)));
         tpp.addActor(c);
         // player
-        PlayerController pc = new EightWayController();
-        TPActor p = makeLineActor(50, 50, 150, 150);
-        p.setController(pc);
-        tpp.addActor(p);
-        tpp.setPlayer(pc);
+        TPActor player = makePlayerActor(150, 150, 250, 150);
+        tpp.setPlayer(player);
         return tpp;
     }
 
@@ -162,6 +172,12 @@ public class App {
         TPController ctrl = new TPController();
         ctrl.setPos(pos);
         return new TPActor(form, ctrl);
+    }
+
+    private TPActor makePlayerActor(double x1, double y1, double x2, double y2) {
+        TPActor player = makeLineActor(x1, y1, x2, y2);
+        player.setController(new EightWayController(), true);
+        return player;
     }
 
     private TPMenu makeGlobalMenu() {
