@@ -50,7 +50,7 @@ public class App {
         TPMenu m = new TPMenu("preset programs");
         m.add(makeProgramMenu(introSlides));
         m.add(makeProgramMenu(makeProgStaticToothpick()));
-        m.add(makeProgramMenu(makeProgSimpleToothpickGame()));
+        m.add(makeProgramMenu(makeProgSimpleNumDronesGame()));
         m.add(new TPMenuItemSimple("toothpick mixed enemies game",
                                    () -> System.out.println("mixed toothpicks")));
         m.add(new TPMenuItemSimple("scrolling map game",
@@ -143,23 +143,10 @@ public class App {
         return tpp;
     }
 
-    private ToothpickProgram makeProgSimpleToothpickGame() {
-        ToothpickProgram tpp = new ToothpickProgram("Simple Toothpicks Game");
-        tpp.setBGColor(Color.BLUE);
-        // drones
-        TPActor a = makeLineActor(10, 200, 20, 300);
-        a.setController(new SimpleController(new Pt(3, 1)));
-        tpp.addActor(a);
-        TPActor b = makeLineActor(30, 310, 50, 250);
-        b.setController(new SimpleController(new Pt(2, -1)));
-        tpp.addActor(b);
-        TPActor c = makeLineActor(300, 300, 550, 450);
-        c.setController(new SimpleController(new Pt(-1, -2)));
-        tpp.addActor(c);
-        // player
-        TPActor player = makePlayerActor(150, 150, 250, 150);
-        tpp.setPlayer(player);
-        return tpp;
+    private ToothpickProgram makeProgSimpleNumDronesGame() {
+        NumDronesProgram prog = new NumDronesProgram("Simple Num-Drones Game");
+        prog.setBGColor(Color.BLUE);
+        return prog;
     }
 
     private TPActor makeLineActor(double x1, double y1, double x2, double y2) {
