@@ -50,7 +50,7 @@ public class App {
         TPMenu m = new TPMenu("preset programs");
         m.add(makeProgramMenu(introSlides));
         m.add(makeProgramMenu(makeProgStaticToothpick()));
-        m.add(makeProgramMenu(makeProgSimpleNumDronesGame()));
+        m.add(makeProgramMenuNumDrones());
         m.add(new TPMenuItemSimple("toothpick mixed enemies game",
                                    () -> System.out.println("mixed toothpicks")));
         m.add(new TPMenuItemSimple("scrolling map game",
@@ -74,12 +74,25 @@ public class App {
         TPMenu m = new TPMenu(prog.getTitle());
         m.add(new TPMenuItemSimple("run", () -> {
                     base.setProgram(prog);
+                    base.hideMenu();
         }));
+        m.add(new TPMenuItemBool("pause when menu active: ",
+                                 prog::getPauseForMenu,
+                                 prog::setPauseForMenu));
         m.add(makePlayerMenu(prog));
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
+        return m;
+    }
+
+    private TPMenu makeProgramMenuNumDrones() {
+        NumDronesProgram prog = makeProgSimpleNumDronesGame();
+        TPMenu m = makeProgramMenu(prog);
+        m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
+                                 () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
+                                 () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
         return m;
     }
 
@@ -143,7 +156,7 @@ public class App {
         return tpp;
     }
 
-    private ToothpickProgram makeProgSimpleNumDronesGame() {
+    private NumDronesProgram makeProgSimpleNumDronesGame() {
         NumDronesProgram prog = new NumDronesProgram("Simple Num-Drones Game");
         prog.setBGColor(Color.BLUE);
         return prog;
