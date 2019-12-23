@@ -25,6 +25,7 @@ public class App {
         base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
+
     }
 
     public void run() {
@@ -34,10 +35,6 @@ public class App {
 
     private TPMenu makeMenu() {
         TPMenu root = new TPMenu("MAIN MENU");
-        root.add(new TPMenuItemSimple("new game",
-                                      () -> System.out.println("start game")));
-        root.add(new TPMenuItemSimple("info",
-                                      () -> System.out.println("info")));
         root.add(makeMenuPresetProgram());
         root.add(new TPMenuItemSimple("load program from file",
                                       () -> System.out.println("load game")));
@@ -112,19 +109,19 @@ public class App {
     private TPMenu makePlayerMenu(TPProgram prog) {
         TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
         m.add(makePlayerControllerMenu(prog));
-        m.add(new TPMenuItemSimple("controller keys", () -> System.out.println("...")));
-        m.add(new TPMenuItemSimple("thrust", () -> System.out.println("...")));
-        m.add(new TPMenuItemSimple("type", () -> System.out.println("...")));
-        m.add(new TPMenuItemSimple("presets players", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("re-define keys", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("calibrate input", () -> System.out.println("...")));
+        m.add(new TPMenuItemSimple("preset players", () -> System.out.println("...")));
         return m;
     }
 
     private TPMenu makePlayerControllerMenu(TPProgram prog) {
-        TPMenu m = new TPMenu(() -> "Change Player-Controller (current = "
+        TPMenu m = new TPMenu(() -> "Change Input Handler (current = "
                               + prog.getPlayer().getInputHandler().getClass().getSimpleName() + ")");
-        m.add(makeInputSwitcherItem(prog, new EightWayInput()));
-        m.add(makeInputSwitcherItem(prog, new EightWayInertiaInput()));
         m.add(makeInputSwitcherItem(prog, new ThrustInertiaInput()));
+        m.add(makeInputSwitcherItem(prog, new EightWayInertiaInput()));
+        m.add(makeInputSwitcherItem(prog, new ThrustInput()));
+        m.add(makeInputSwitcherItem(prog, new EightWayInput()));
         return m;
     }
 
@@ -169,6 +166,7 @@ public class App {
                     setPlayer(player);
                 }
             };
+        tpp.setShowIntersections(true);
         return tpp;
     }
 
