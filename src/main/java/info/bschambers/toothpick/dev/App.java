@@ -92,6 +92,9 @@ public class App {
                     System.out.println("ACTOR:\n" + p.getActor().infoString());
                     System.out.println("==============================");
         }));
+        m.add(new TPMenuItemBool("show line-intersection points: ",
+                                 prog::getShowIntersections,
+                                 prog::setShowIntersections));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
         return m;
@@ -199,8 +202,6 @@ public class App {
         m.add(new TPMenuItemIncr("goal fps", () -> base.getFpsGoal() + "",
                                  () -> base.setFpsGoal(base.getFpsGoal() - 1),
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
-        m.add(new TPMenuItemSimple("show intersection points",
-                                   () -> System.out.println("intersections")));
         m.add(new TPMenuItemSimple("show bounding boxes",
                                    () -> System.out.println("bounding boxes")));
         m.add(new TPMenuItemSimple("show diagnostics",
