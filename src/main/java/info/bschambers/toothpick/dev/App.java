@@ -181,7 +181,7 @@ public class App {
         Pt pos = Geom.midPoint(start, end);
         start = start.add(pos.invert());
         end = end.add(pos.invert());
-        LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
+        TPForm form = new TPForm(new TPPart[] { new TPLine(new Line(start, end)) });
         TPActor actor = new TPActor(form);
         actor.addBehaviour(TPFactory.WRAP_AT_BOUNDS);
         actor.setPos(pos);
