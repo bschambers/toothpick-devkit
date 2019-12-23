@@ -72,16 +72,26 @@ public class App {
 
     private TPMenu makeProgramMenu(TPProgram prog) {
         TPMenu m = new TPMenu(prog.getTitle());
-        m.add(new TPMenuItemSimple("run", () -> {
+        m.add(new TPMenuItemSimple("RUN", () -> {
                     base.setProgram(prog);
                     base.hideMenu();
         }));
+        m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer()));
+        m.add(new TPMenuItemSimple("RESET", () -> prog.reset()));
         m.add(new TPMenuItemBool("pause when menu active: ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
         m.add(makePlayerMenu(prog));
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
+        m.add(new TPMenuItemSimple("print player info", () -> {
+                    TPPlayer p = prog.getPlayer();
+                    System.out.println("==============================\n");
+                    System.out.println("TPPlayer INPUT = " + p.getInputHandler() + "\n");
+                    System.out.println("ARCHETYPE:\n" + p.getArchetype().infoString());
+                    System.out.println("ACTOR:\n" + p.getActor().infoString());
+                    System.out.println("==============================");
+        }));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
         return m;
@@ -108,18 +118,16 @@ public class App {
 
     private TPMenu makePlayerControllerMenu(TPProgram prog) {
         TPMenu m = new TPMenu(() -> "Change Player-Controller (current = "
-                              + prog.getPlayerController().getClass().getSimpleName() + ")");
-        m.add(makeControllerSwitcherItem(prog, new EightWayController()));
-        m.add(makeControllerSwitcherItem(prog, new EightWayInertiaController()));
-        m.add(makeControllerSwitcherItem(prog, new ThrustInertiaController()));
+                              + prog.getPlayer().getInputHandler().getClass().getSimpleName() + ")");
+        m.add(makeInputSwitcherItem(prog, new EightWayInput()));
+        m.add(makeInputSwitcherItem(prog, new EightWayInertiaInput()));
+        m.add(makeInputSwitcherItem(prog, new ThrustInertiaInput()));
         return m;
     }
 
-    private TPMenuItem makeControllerSwitcherItem(TPProgram prog, PlayerController ctrl) {
-
-        return new TPMenuItemSimple(ctrl.getClass().getSimpleName(),
-                                    () -> prog.changePlayerController(ctrl));
-
+    private TPMenuItem makeInputSwitcherItem(TPProgram prog, KeyInputHandler ih) {
+        return new TPMenuItemSimple(ih.getClass().getSimpleName(),
+                                    () -> prog.getPlayer().setInputHandler(ih));
     }
 
     private SlideShowProgram makeSlideShow() {
@@ -151,7 +159,7 @@ public class App {
         tpp.addActor(makeLineActor(200, 350, 400, 250));
         tpp.addActor(makeLineActor(500, 175, 550, 400));
         // player
-        TPActor player = makePlayerActor(150, 150, 250, 150);
+        TPPlayer player = makePlayer(150, 150, 250, 150);
         tpp.setPlayer(player);
         return tpp;
     }
@@ -169,14 +177,15 @@ public class App {
         start = start.add(pos.invert());
         end = end.add(pos.invert());
         LinesForm form = new LinesForm(new TPLine(new Line(start, end)));
-        TPController ctrl = new TPController();
-        ctrl.setPos(pos);
-        return new TPActor(form, ctrl);
+        TPActor actor = new TPActor(form);
+        actor.addBehaviour(TPFactory.WRAP_AT_BOUNDS);
+        actor.setPos(pos);
+        return actor;
     }
 
-    private TPActor makePlayerActor(double x1, double y1, double x2, double y2) {
-        TPActor player = makeLineActor(x1, y1, x2, y2);
-        player.setController(new EightWayController(), true);
+    private TPPlayer makePlayer(double x1, double y1, double x2, double y2) {
+        TPPlayer player = new TPPlayer(makeLineActor(x1, y1, x2, y2));
+        player.setInputHandler(new EightWayInput());
         return player;
     }
 
