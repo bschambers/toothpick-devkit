@@ -76,8 +76,8 @@ public class App {
                     base.setProgram(prog);
                     base.hideMenu();
         }));
-        m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer()));
-        m.add(new TPMenuItemSimple("RESET", () -> prog.reset()));
+        m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer(true)));
+        m.add(new TPMenuItemSimple("RESET", () -> prog.init()));
         m.add(new TPMenuItemBool("pause when menu active: ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
@@ -153,14 +153,19 @@ public class App {
     }
 
     private ToothpickProgram makeProgStaticToothpick() {
-        ToothpickProgram tpp = new ToothpickProgram("Static Toothpicks");
-        // drones
-        tpp.addActor(makeLineActor(45, 20, 200, 30));
-        tpp.addActor(makeLineActor(200, 350, 400, 250));
-        tpp.addActor(makeLineActor(500, 175, 550, 400));
-        // player
-        TPPlayer player = makePlayer(150, 150, 250, 150);
-        tpp.setPlayer(player);
+        ToothpickProgram tpp = new ToothpickProgram("Static Toothpicks") {
+                @Override
+                public void init() {
+                    super.init();
+                    // drones
+                    addActor(makeLineActor(45, 20, 200, 30));
+                    addActor(makeLineActor(200, 350, 400, 250));
+                    addActor(makeLineActor(500, 175, 550, 400));
+                    // player
+                    TPPlayer player = makePlayer(150, 150, 250, 150);
+                    setPlayer(player);
+                }
+            };
         return tpp;
     }
 
