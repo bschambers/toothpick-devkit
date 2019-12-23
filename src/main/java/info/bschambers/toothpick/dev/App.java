@@ -45,9 +45,10 @@ public class App {
 
     private TPMenu makeMenuPresetProgram() {
         TPMenu m = new TPMenu("preset programs");
-        m.add(makeProgramMenu(introSlides));
-        m.add(makeProgramMenu(makeProgStaticToothpick()));
-        m.add(makeProgramMenuNumDrones());
+        m.add(makeProgMenu(introSlides));
+        m.add(makeProgMenu(makeProgStaticToothpick()));
+        m.add(makeProgMenuNumDrones(makeProgSimpleNumDronesGame()));
+        m.add(makeProgMenuNumDrones(new RibbonGame()));
         m.add(new TPMenuItemSimple("toothpick mixed enemies game",
                                    () -> System.out.println("mixed toothpicks")));
         m.add(new TPMenuItemSimple("scrolling map game",
@@ -58,8 +59,6 @@ public class App {
                                    () -> System.out.println("powerups")));
         m.add(new TPMenuItemSimple("levels game",
                                    () -> System.out.println("levels")));
-        m.add(new TPMenuItemSimple("ribbon game",
-                                   () -> System.out.println("ribbon")));
         m.add(new TPMenuItemSimple("asteroids game",
                                    () -> System.out.println("asteroid")));
         m.add(new TPMenuItemSimple("gravity orbit game",
@@ -67,7 +66,7 @@ public class App {
         return m;
     }
 
-    private TPMenu makeProgramMenu(TPProgram prog) {
+    private TPMenu makeProgMenu(TPProgram prog) {
         TPMenu m = new TPMenu(prog.getTitle());
         m.add(new TPMenuItemSimple("RUN", () -> {
                     base.setProgram(prog);
@@ -100,14 +99,14 @@ public class App {
         return m;
     }
 
-    private TPMenu makeProgramMenuNumDrones() {
-        NumDronesProgram prog = makeProgSimpleNumDronesGame();
-        TPMenu m = makeProgramMenu(prog);
+    private TPMenu makeProgMenuNumDrones(NumDronesProgram prog) {
+        TPMenu m = makeProgMenu(prog);
         m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
                                  () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
                                  () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
         return m;
     }
+
 
     private TPMenu makePlayerMenu(TPProgram prog) {
         TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
@@ -213,6 +212,20 @@ public class App {
     public static void main(String[] args) {
         App app = new App();
         app.run();
+    }
+
+    private class RibbonGame extends NumDronesProgram {
+
+        public RibbonGame() {
+            super("Ribbon Game");
+            setSmearMode(true);
+        }
+
+        @Override
+        public void init() {
+            super.init();
+            setBGColor(TPFactory.getRandomColor());
+        }
     }
 
 }
