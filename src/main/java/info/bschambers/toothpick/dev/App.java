@@ -74,7 +74,7 @@ public class App {
                     base.hideMenu();
         }));
         m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer(true)));
-        m.add(new TPMenuItemSimple("RESET", () -> prog.init()));
+        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
         m.add(new TPMenuItemBool("pause when menu active: ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
@@ -90,8 +90,11 @@ public class App {
                     System.out.println("==============================");
         }));
         m.add(new TPMenuItemBool("show line-intersection points: ",
-                                 prog::getShowIntersections,
+                                 prog::isShowIntersections,
                                  prog::setShowIntersections));
+        m.add(new TPMenuItemBool("smear-mode: ",
+                                 prog::isSmearMode,
+                                 prog::setSmearMode));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
         return m;
