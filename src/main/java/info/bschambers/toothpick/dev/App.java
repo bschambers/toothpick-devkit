@@ -112,7 +112,7 @@ public class App {
         m.add(new TPMenuItemSimple("white", () -> prog.setBGColor(Color.WHITE)));
         m.add(new TPMenuItemSimple("blue", () -> prog.setBGColor(Color.BLUE)));
         m.add(new TPMenuItemSimple("grey", () -> prog.setBGColor(Color.GRAY)));
-        m.add(new TPMenuItemSimple("random", () -> prog.setBGColor(TPFactory.getRandomColor())));
+        m.add(new TPMenuItemSimple("random", () -> prog.setBGColor(ColorGetter.randColor())));
         return m;
     }
 
@@ -240,7 +240,7 @@ public class App {
         @Override
         public void init() {
             super.init();
-            setBGColor(TPFactory.getRandomColor());
+            setBGColor(ColorGetter.randColor());
         }
     }
 
