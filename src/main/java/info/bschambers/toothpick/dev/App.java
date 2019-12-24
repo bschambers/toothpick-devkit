@@ -51,6 +51,8 @@ public class App {
         m.add(makeProgMenuNumDrones(new RibbonGame()));
         m.add(new TPMenuItemSimple("toothpick mixed enemies game",
                                    () -> System.out.println("mixed toothpicks")));
+        m.add(new TPMenuItemSimple("Increment num enemies game",
+                                   () -> System.out.println("increment")));
         m.add(new TPMenuItemSimple("scrolling map game",
                                    () -> System.out.println("scrolling map")));
         m.add(new TPMenuItemSimple("boss battle game",
@@ -94,8 +96,23 @@ public class App {
         m.add(new TPMenuItemBool("smear-mode: ",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
+        m.add(makeBGColorMenu(prog));
         m.add(new TPMenuItemSimple("open in editor",
                                    () -> System.out.println("open program in editor")));
+        return m;
+    }
+
+    private String rgbStr(Color c) {
+        return c.getRed() + ", " + c.getGreen() + ", " + c.getBlue();
+    }
+
+    private TPMenu makeBGColorMenu(TPProgram prog) {
+        TPMenu m = new TPMenu(() -> "Set BG Color (current: " + rgbStr(prog.getBGColor()) + ")");
+        m.add(new TPMenuItemSimple("black", () -> prog.setBGColor(Color.BLACK)));
+        m.add(new TPMenuItemSimple("white", () -> prog.setBGColor(Color.WHITE)));
+        m.add(new TPMenuItemSimple("blue", () -> prog.setBGColor(Color.BLUE)));
+        m.add(new TPMenuItemSimple("grey", () -> prog.setBGColor(Color.GRAY)));
+        m.add(new TPMenuItemSimple("random", () -> prog.setBGColor(TPFactory.getRandomColor())));
         return m;
     }
 
@@ -106,7 +123,6 @@ public class App {
                                  () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
         return m;
     }
-
 
     private TPMenu makePlayerMenu(TPProgram prog) {
         TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
