@@ -49,8 +49,7 @@ public class App {
         m.add(makeProgMenu(makeProgStaticToothpick()));
         m.add(makeProgMenuNumDrones(makeProgSimpleNumDronesGame()));
         m.add(makeProgMenuNumDrones(new RibbonGame()));
-        m.add(new TPMenuItemSimple("toothpick mixed enemies game",
-                                   () -> System.out.println("mixed toothpicks")));
+        m.add(makeProgMenuNumDrones(new MixedDronesGame()));
         m.add(new TPMenuItemSimple("Increment num enemies game",
                                    () -> System.out.println("increment")));
         m.add(new TPMenuItemSimple("scrolling map game",
@@ -241,6 +240,29 @@ public class App {
         public void init() {
             super.init();
             setBGColor(ColorGetter.randColor());
+        }
+    }
+
+    private class MixedDronesGame extends NumDronesProgram {
+
+        public MixedDronesGame() {
+            super("Mixed Drones Game");
+            setDroneSupplier(this::makeDrone);
+        }
+
+        @Override
+        public void init() {
+            super.init();
+            setBGColor(Color.BLACK);
+        }
+
+        private TPActor makeDrone() {
+            double r = Math.random();
+            if (r < 0.333)
+                return TPFactory.lineActor(getBounds());
+            if (r < 0.666)
+                return TPFactory.regularPolygonActor(getBounds());
+            return TPFactory.regularThistleActor(getBounds());
         }
     }
 

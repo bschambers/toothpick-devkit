@@ -18,7 +18,7 @@ public class NumDronesProgram extends ToothpickProgram {
     private int spawnDelay = 0;
 
     private Supplier<TPActor> droneSupplier
-        = () -> TPFactory.randSingleLineEdgePos(getBounds());
+        = () -> TPFactory.lineActor(getBounds());
 
     public NumDronesProgram(String title) {
         super(title);
@@ -33,6 +33,10 @@ public class NumDronesProgram extends ToothpickProgram {
     public int getDronesGoal() { return dronesGoal; }
 
     public void setDronesGoal(int val) { dronesGoal = val; }
+
+    public void setDroneSupplier(Supplier<TPActor> supplier) {
+        droneSupplier = supplier;
+    }
 
     @Override
     public void update() {
