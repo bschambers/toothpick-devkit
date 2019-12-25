@@ -1,10 +1,11 @@
 package info.bschambers.toothpick.dev;
 
+import info.bschambers.toothpick.*;
 import info.bschambers.toothpick.actor.*;
-import info.bschambers.toothpick.game.*;
+import info.bschambers.toothpick.dev.editor.TPEditor;
 import info.bschambers.toothpick.geom.*;
 import info.bschambers.toothpick.ui.*;
-import info.bschambers.toothpick.ui.swing.SwingUI;
+import info.bschambers.toothpick.ui.swing.TPSwingUI;
 import java.awt.Color;
 import java.awt.Image;
 import java.io.IOException;
@@ -14,18 +15,17 @@ import javax.imageio.ImageIO;
 
 public class App {
 
-    private SwingUI window;
+    private TPEditor window;
     private TPBase base;
     private SlideShowProgram introSlides;
 
     public App() {
-        window = new SwingUI("Atomic Toothpick Test");
+        window = new TPEditor();
         base = new TPBase();
         introSlides = makeSlideShow();
         base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
-
     }
 
     public void run() {
@@ -96,8 +96,9 @@ public class App {
                                  prog::isSmearMode,
                                  prog::setSmearMode));
         m.add(makeBGColorMenu(prog));
-        m.add(new TPMenuItemSimple("open in editor",
-                                   () -> System.out.println("open program in editor")));
+        m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
+                                          "DEACTIVATE EDITOR" : "activate editor"),
+                                   () -> window.setEditorMode(!window.isEditorMode())));
         return m;
     }
 
