@@ -18,6 +18,7 @@ public class App {
     private TPEditor window;
     private TPBase base;
     private SlideShowProgram introSlides;
+    private int stopAfterVal = 5;
 
     public App() {
         window = new TPEditor();
@@ -78,6 +79,14 @@ public class App {
         m.add(new TPMenuItemBool("pause when menu active: ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
+        m.add(new TPMenuItemSimple(() -> "step forward by " + stopAfterVal + " frames",
+                                   () -> {
+                                       prog.setPauseForMenu(true);
+                                       prog.setStopAfter(stopAfterVal);
+        }));
+        m.add(new TPMenuItemIncr("set step-forward amount", () -> "" + stopAfterVal,
+                                 () -> stopAfterVal--,
+                                 () -> stopAfterVal++));
         m.add(makePlayerMenu(prog));
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
@@ -190,7 +199,7 @@ public class App {
 
     private NumDronesProgram makeProgSimpleNumDronesGame() {
         NumDronesProgram prog = new NumDronesProgram("Simple Num-Drones Game");
-        prog.setBGColor(Color.BLUE);
+        prog.setBGColor(Color.BLACK);
         return prog;
     }
 
