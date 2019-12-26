@@ -15,6 +15,7 @@ public class ActorEditor {
     private int vectorScale = 80;
     private Rectangle positionHandle;
     private Rectangle vectorHandle;
+    private boolean selected = false;
 
     public ActorEditor(TPActor a) {
         actor = a;
@@ -22,6 +23,9 @@ public class ActorEditor {
     }
 
     public TPActor getActor() { return actor; }
+
+    public boolean isSelected() { return selected; }
+    public void setSelected(boolean val) { selected = val; }
 
     public int getPosX() { return posX; }
     public int getPosY() { return posY; }
