@@ -9,13 +9,15 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import static java.awt.event.KeyEvent.VK_SHIFT;
 
 public class TPEditor extends TPSwingUI {
 
-    private enum Mode { IDLE, SELECT_RECT, MOVE_ACTOR, MOVE_INERTIA }
+    private enum Mode { IDLE, SELECT_RECT, MOVE_ACTOR, MOVE_INERTIA, ROTATION }
     private Mode mode = Mode.IDLE;
 
     private boolean editorMode = false;
@@ -29,6 +31,8 @@ public class TPEditor extends TPSwingUI {
     private Rectangle selectRect = null;
     private ActorEditor selectedAE = null;
     private boolean inertiaHandleSelected = false;
+    // keyboard
+    private boolean shiftDown = false;
 
     public TPEditor() {
         super("Toothpick Editor");
@@ -182,6 +186,24 @@ public class TPEditor extends TPSwingUI {
         }
     }
 
+    /*------------------------- Keyboard Input -------------------------*/
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        super.keyPressed(e);
+        if (editorMode)
+            if (e.getKeyCode() == VK_SHIFT)
+                shiftDown = true;
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        super.keyReleased(e);
+        if (editorMode)
+            if (e.getKeyCode() == VK_SHIFT)
+                shiftDown = false;
+    }
+
     /*-------------------------- Mouse Input ---------------------------*/
 
     private void setPoint(Point p, MouseEvent e) {
@@ -207,7 +229,11 @@ public class TPEditor extends TPSwingUI {
                 if (inertiaHandleSelected) {
                     mode = Mode.MOVE_INERTIA;
                 } else {
-                    mode = Mode.MOVE_ACTOR;
+                    if (shiftDown) {
+                        mode = Mode.ROTATION;
+                    } else {
+                        mode = Mode.MOVE_ACTOR;
+                    }
                 }
                 if (!ae.isSelected()) {
                     clearSelection();
@@ -220,9 +246,8 @@ public class TPEditor extends TPSwingUI {
     @Override
     public void mouseReleased(MouseEvent e) {
         super.mouseReleased(e);
-        if (editorMode) {
+        if (editorMode)
             mode = Mode.IDLE;
-        }
     }
 
     @Override
@@ -245,17 +270,26 @@ public class TPEditor extends TPSwingUI {
                 updateSelection();
 
             } else if (mode == Mode.MOVE_INERTIA) {
-
                 if (selectedAE != null) {
-
                     ActorEditor sae = selectedAE;
                     double ix = sae.getActor().xInertia + (x / (double) sae.getInertiaScale());
                     double iy = sae.getActor().yInertia + (y / (double) sae.getInertiaScale());
-
                     for (ActorEditor ae : actEds) {
                         if (ae.isSelected()) {
                             ae.getActor().xInertia = ix;
                             ae.getActor().yInertia = iy;
+                            ae.getActor().updateForm();
+                        }
+                    }
+                }
+
+            } else if (mode == Mode.ROTATION) {
+                if (selectedAE != null) {
+                    ActorEditor sae = selectedAE;
+                    double ai = sae.getActor().angleInertia + (y / (double) 1500);
+                    for (ActorEditor ae : actEds) {
+                        if (ae.isSelected()) {
+                            ae.getActor().angleInertia = ai;
                             ae.getActor().updateForm();
                         }
                     }
