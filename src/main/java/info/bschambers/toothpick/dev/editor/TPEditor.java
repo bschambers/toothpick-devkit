@@ -18,17 +18,17 @@ public class TPEditor extends TPSwingUI {
     private enum Mode { IDLE, SELECT_RECT, MOVE_ACTOR, MOVE_INERTIA }
     private Mode mode = Mode.IDLE;
 
-    private Rectangle selectRect = null;
-    // private final List<ActorEditor> selection = new ArrayList<>();
-
     private boolean editorMode = false;
     private List<ActorEditor> actEds = new ArrayList<>();
     private List<ActorEditor> toAdd = new ArrayList<>();
     private List<ActorEditor> toRemove = new ArrayList<>();
-    // mouse point
+    // mouse and selection
     private Point startP = new Point(0, 0);
     private Point currentP = new Point(0, 0);
     private Point prevP = new Point(0, 0);
+    private Rectangle selectRect = null;
+    private ActorEditor selectedAE = null;
+    private boolean inertiaHandleSelected = false;
 
     public TPEditor() {
         super("Toothpick Editor");
@@ -95,7 +95,7 @@ public class TPEditor extends TPSwingUI {
             g.setColor(Color.WHITE);
             int midX = getWidth() / 2;
             int y = 30;
-            g.drawString("EDITOR MODE: " + mode, midX, y);
+            g.drawString("Editor Mode: " + mode, midX, y);
         }
     }
 
@@ -136,19 +136,32 @@ public class TPEditor extends TPSwingUI {
     }
 
     /**
-     * <p>Get the ActorEditor at point, or return null if no ActorEditor control handle is
-     * under the point.</p>
+     * <p>If an ActorEditor control handle is under point then set return the parent
+     * ActorEditor as {@code selectedAE}, otherwise set it to {@code null}.</p>
+     *
+     * <p>If the point is on an inertia control handle then also set
+     * {@code inertiaHandleSelected} to true.</p>
      */
-    private ActorEditor getAE(Point p) {
-        Insets is = getInsets();
-        p = new Point(p.x, p.y - is.top);
-        for (ActorEditor ae : actEds)
-            if (ae.getPositionHandle().contains(p))
-                return ae;
-        return null;
+    private void selectAE(Point p) {
+        selectedAE = null;
+        inertiaHandleSelected = false;
+        Insets insets = getInsets();
+        p = new Point(p.x, p.y - insets.top);
+        Choosing:
+        for (ActorEditor ae : actEds) {
+            if (ae.getPositionHandle().contains(p)) {
+                selectedAE = ae;
+                break Choosing;
+            } else if (ae.getInertiaHandle().contains(p)) {
+                inertiaHandleSelected = true;
+                selectedAE = ae;
+                break Choosing;
+            }
+        }
     }
 
     private void clearSelection() {
+        selectedAE = null;
         selectRect = null;
         for (ActorEditor ae : actEds)
             ae.setSelected(false);
@@ -183,14 +196,19 @@ public class TPEditor extends TPSwingUI {
             setPoint(startP, e);
             setPoint(currentP, e);
             setPoint(prevP, e);
-            ActorEditor ae = getAE(e.getPoint());
+            selectAE(e.getPoint());
+            ActorEditor ae = selectedAE;
 
             if (ae == null) {
                 clearSelection();
                 mode = Mode.SELECT_RECT;
 
             } else {
-                mode = Mode.MOVE_ACTOR;
+                if (inertiaHandleSelected) {
+                    mode = Mode.MOVE_INERTIA;
+                } else {
+                    mode = Mode.MOVE_ACTOR;
+                }
                 if (!ae.isSelected()) {
                     clearSelection();
                     ae.setSelected(true);
@@ -225,6 +243,23 @@ public class TPEditor extends TPSwingUI {
                 int sh = Math.abs(currentP.y - startP.y);
                 selectRect = new Rectangle(sx, sy, sw, sh);
                 updateSelection();
+
+            } else if (mode == Mode.MOVE_INERTIA) {
+
+                if (selectedAE != null) {
+
+                    ActorEditor sae = selectedAE;
+                    double ix = sae.getActor().xInertia + (x / (double) sae.getInertiaScale());
+                    double iy = sae.getActor().yInertia + (y / (double) sae.getInertiaScale());
+
+                    for (ActorEditor ae : actEds) {
+                        if (ae.isSelected()) {
+                            ae.getActor().xInertia = ix;
+                            ae.getActor().yInertia = iy;
+                            ae.getActor().updateForm();
+                        }
+                    }
+                }
 
             } else if (mode == Mode.MOVE_ACTOR) {
                 for (ActorEditor ae : actEds) {

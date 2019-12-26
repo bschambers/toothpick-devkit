@@ -8,11 +8,11 @@ public final class EditorGfx {
 
     public static void actorEditor(Graphics g, ActorEditor ae) {
         g.setColor(Color.GRAY);
-        g.drawLine(ae.getPosX(), ae.getPosY(), ae.getVectorPosX(), ae.getVectorPosY());
+        g.drawLine(ae.getPosX(), ae.getPosY(), ae.getInertiaPosX(), ae.getInertiaPosY());
         g.setColor(Color.GREEN);
         Gfx.rectangle(g, ae.getPositionHandle());
         g.setColor(Color.PINK);
-        Gfx.rectangle(g, ae.getVectorHandle());
+        Gfx.rectangle(g, ae.getInertiaHandle());
         if (ae.isSelected()) {
             g.setColor(Color.RED);
             Gfx.centeredSquare(g, ae.getPosX(), ae.getPosY(), 40);

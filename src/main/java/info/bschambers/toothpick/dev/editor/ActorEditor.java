@@ -8,13 +8,13 @@ public class ActorEditor {
     private TPActor actor;
     private int posX = 0;
     private int posY = 0;
-    private int vecPosX = 0;
-    private int vecPosY = 0;
+    private int inerPosX = 0;
+    private int inerPosY = 0;
     private int posHandleSize = 20;
-    private int vecHandleSize = 10;
-    private int vectorScale = 80;
+    private int inerHandleSize = 10;
+    private int inertiaScale = 80;
     private Rectangle positionHandle;
-    private Rectangle vectorHandle;
+    private Rectangle inertiaHandle;
     private boolean selected = false;
 
     public ActorEditor(TPActor a) {
@@ -30,15 +30,19 @@ public class ActorEditor {
     public int getPosX() { return posX; }
     public int getPosY() { return posY; }
 
-    public int getVectorPosX() { return vecPosX; }
-    public int getVectorPosY() { return vecPosY; }
+    public int getInertiaPosX() { return inerPosX; }
+    public int getInertiaPosY() { return inerPosY; }
 
     public Rectangle getPositionHandle() {
         return positionHandle;
     }
 
-    public Rectangle getVectorHandle() {
-        return vectorHandle;
+    public Rectangle getInertiaHandle() {
+        return inertiaHandle;
+    }
+
+    public int getInertiaScale() {
+        return inertiaScale;
     }
 
     public void update() {
@@ -47,13 +51,11 @@ public class ActorEditor {
         int x = posX - (posHandleSize / 2);
         int y = posY - (posHandleSize / 2);
         positionHandle = new Rectangle(x, y, posHandleSize, posHandleSize);
-
-        vecPosX = posX + (int) (getActor().xInertia * vectorScale);
-        vecPosY = posY + (int) (getActor().yInertia * vectorScale);
-
-        x = vecPosX - (vecHandleSize / 2);
-        y = vecPosY - (vecHandleSize / 2);
-        vectorHandle = new Rectangle(x, y, vecHandleSize, vecHandleSize);
+        inerPosX = posX + (int) (getActor().xInertia * inertiaScale);
+        inerPosY = posY + (int) (getActor().yInertia * inertiaScale);
+        x = inerPosX - (inerHandleSize / 2);
+        y = inerPosY - (inerHandleSize / 2);
+        inertiaHandle = new Rectangle(x, y, inerHandleSize, inerHandleSize);
     }
 
 }
