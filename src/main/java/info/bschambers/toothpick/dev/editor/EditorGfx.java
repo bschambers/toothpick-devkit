@@ -13,6 +13,10 @@ public final class EditorGfx {
         Gfx.rectangle(g, ae.getPositionHandle());
         g.setColor(Color.PINK);
         Gfx.rectangle(g, ae.getVectorHandle());
+        if (ae.isSelected()) {
+            g.setColor(Color.RED);
+            Gfx.centeredSquare(g, ae.getPosX(), ae.getPosY(), 40);
+        }
     }
 
 }

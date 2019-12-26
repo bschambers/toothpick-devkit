@@ -258,6 +258,7 @@ public class App {
         public MixedDronesGame() {
             super("Mixed Drones Game");
             setDroneSupplier(this::makeDrone);
+            setDronesGoal(6);
         }
 
         @Override

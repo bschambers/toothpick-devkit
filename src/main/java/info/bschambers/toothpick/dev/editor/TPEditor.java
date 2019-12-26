@@ -78,6 +78,11 @@ public class TPEditor extends TPSwingUI {
     protected void paintOverlay(Graphics g) {
         super.paintOverlay(g);
         if (editorMode) {
+            // paint selection
+            if (selectRect != null) {
+                g.setColor(Color.BLUE);
+                Gfx.rectangle(g, selectRect);
+            }
             for (ActorEditor ae : actEds)
                 EditorGfx.actorEditor(g, ae);
         }
@@ -144,8 +149,24 @@ public class TPEditor extends TPSwingUI {
     }
 
     private void clearSelection() {
+        selectRect = null;
         for (ActorEditor ae : actEds)
             ae.setSelected(false);
+    }
+
+    /**
+     * Selects all actors inside the rectangular selection area.
+     */
+    private void updateSelection() {
+        if (selectRect != null) {
+            for (ActorEditor ae : actEds) {
+                if (selectRect.contains(ae.getPosX(), ae.getPosY())) {
+                    ae.setSelected(true);
+                } else {
+                    ae.setSelected(false);
+                }
+            }
+        }
     }
 
     /*-------------------------- Mouse Input ---------------------------*/
@@ -163,12 +184,17 @@ public class TPEditor extends TPSwingUI {
             setPoint(currentP, e);
             setPoint(prevP, e);
             ActorEditor ae = getAE(e.getPoint());
-            System.out.println("mouse pressed at " + e.getPoint());
-            if (ae != null) {
-                System.out.println("... pressed on: " + ae);
-                mode = Mode.MOVE_ACTOR;
+
+            if (ae == null) {
                 clearSelection();
-                ae.setSelected(true);
+                mode = Mode.SELECT_RECT;
+
+            } else {
+                mode = Mode.MOVE_ACTOR;
+                if (!ae.isSelected()) {
+                    clearSelection();
+                    ae.setSelected(true);
+                }
             }
         }
     }
@@ -184,27 +210,37 @@ public class TPEditor extends TPSwingUI {
     @Override
     public void mouseDragged(MouseEvent e) {
         super.mouseDragged(e);
+        if (editorMode) {
+            setPoint(currentP, e);
+            int x = currentP.x - prevP.x;
+            int y = currentP.y - prevP.y;
+            prevP.x = currentP.x;
+            prevP.y = currentP.y;
 
-	setPoint(currentP, e);
-	int x = currentP.x - prevP.x;
-	int y = currentP.y - prevP.y;
-	prevP.x = currentP.x;
-	prevP.y = currentP.y;
+            if (mode == Mode.SELECT_RECT) {
 
-	if (mode == Mode.MOVE_ACTOR) {
-	    for (ActorEditor ae : actEds) {
-		if (ae.isSelected()) {
-		    ae.getActor().x += x;
-		    ae.getActor().y += y;
-                    ae.getActor().updateForm();
+                int sx = Math.min(startP.x, currentP.x);
+                int sy = Math.min(startP.y, currentP.y);
+                int sw = Math.abs(currentP.x - startP.x);
+                int sh = Math.abs(currentP.y - startP.y);
+                selectRect = new Rectangle(sx, sy, sw, sh);
+                updateSelection();
+
+            } else if (mode == Mode.MOVE_ACTOR) {
+                for (ActorEditor ae : actEds) {
+                    if (ae.isSelected()) {
+                        ae.getActor().x += x;
+                        ae.getActor().y += y;
+                        ae.getActor().updateForm();
+                    }
+                }
+
+                if (selectRect != null) {
+                    int sx = selectRect.x;
+                    int sy = selectRect.y;
+                    selectRect.setLocation(sx + x, sy + y);
                 }
             }
-
-	    if (selectRect != null) {
-		int sx = selectRect.x;
-		int sy = selectRect.y;
-		selectRect.setLocation(sx + x, sy + y);
-	    }
 	}
     }
 
