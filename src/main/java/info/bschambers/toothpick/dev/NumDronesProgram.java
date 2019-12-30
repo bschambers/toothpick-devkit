@@ -1,10 +1,11 @@
 package info.bschambers.toothpick.dev;
 
-import info.bschambers.toothpick.ToothpickProgram;
+import info.bschambers.toothpick.MaintainDronesNum;
+import info.bschambers.toothpick.TPProgram;
+import info.bschambers.toothpick.ToothpickPhysics;
 import info.bschambers.toothpick.actor.TPActor;
 import info.bschambers.toothpick.actor.TPFactory;
-import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * <p>Program maintains a set number of drones, spawning a new one after a drone is
@@ -12,64 +13,31 @@ import java.util.function.Supplier;
  *
  * <p>New drones a spawned from a list of actor-factory methods.</p>
  */
-public class NumDronesProgram extends ToothpickProgram {
+public class NumDronesProgram extends TPProgram {
 
-    private int dronesGoal = 3;
-    private int spawnDelay = 0;
+    private MaintainDronesNum numBehaviour = new MaintainDronesNum();
 
-    private Supplier<TPActor> droneSupplier
-        = () -> TPFactory.lineActor(getBounds());
-
-    public NumDronesProgram(String title) {
-        super(title);
-    }
-
-    @Override
-    public void init() {
-        super.init();
+    public NumDronesProgram() {
+        addBehaviour(new ToothpickPhysics());
+        addBehaviour(numBehaviour);
         setPlayer(TPFactory.playerLine(getBounds().center()));
     }
 
-    public int getDronesGoal() { return dronesGoal; }
-
-    public void setDronesGoal(int val) { dronesGoal = val; }
-
-    public void setDroneSupplier(Supplier<TPActor> supplier) {
-        droneSupplier = supplier;
+    public NumDronesProgram(String title) {
+        this();
+        setTitle(title);
     }
 
-    @Override
-    public void update() {
-        doSpawning();
-        super.update();
+    public int getDronesGoal() {
+        return numBehaviour.getDronesGoal();
     }
 
-    private void doSpawning() {
-        if (numDrones() < dronesGoal) {
-            if (spawnDelay < 1) {
-                TPActor drone = droneSupplier.get();
-                addActor(drone);
-                spawnDelay = (int) (Math.random() * 600);
-            } else {
-                spawnDelay--;
-            }
-        }
+    public void setDronesGoal(int val) {
+        numBehaviour.setDronesGoal(val);
     }
 
-    @Override
-    public List<String> getInfoLines() {
-        List<String> lines = super.getInfoLines();
-        lines.add("drone-num goal: " + dronesGoal);
-        lines.add("spawn-delay: " + spawnDelay);
-        return lines;
-    }
-
-    private int numDrones() {
-        int n = 0;
-        for (TPActor a : actors)
-            if (a != getPlayer().getActor())
-                n++;
-        return n;
+    public void setDroneFunc(Function<TPProgram, TPActor> func) {
+        numBehaviour.setDroneFunc(func);
     }
 
 }

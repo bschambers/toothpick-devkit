@@ -3,27 +3,34 @@ package info.bschambers.toothpick.dev;
 import info.bschambers.toothpick.*;
 import info.bschambers.toothpick.actor.*;
 import info.bschambers.toothpick.dev.editor.TPEditor;
+import info.bschambers.toothpick.diskops.TPXml;
 import info.bschambers.toothpick.geom.*;
 import info.bschambers.toothpick.ui.*;
 import info.bschambers.toothpick.ui.swing.TPSwingUI;
 import java.awt.Color;
 import java.awt.Image;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.function.Supplier;
 import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class App {
 
     private TPEditor window;
     private TPBase base;
-    private SlideShowProgram introSlides;
+    private TPProgram introSlides;
     private int stopAfterVal = 5;
+    private TPProgram loadedProg = new TPProgram("NULL PROGRAM");
+    private String saveDir = "data/saved-games";
 
     public App() {
         window = new TPEditor();
         base = new TPBase();
-        introSlides = makeSlideShow();
+        introSlides = makeIntroSlidesProg();
         base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
@@ -37,8 +44,8 @@ public class App {
     private TPMenu makeMenu() {
         TPMenu root = new TPMenu("MAIN MENU");
         root.add(makeMenuPresetProgram());
-        root.add(new TPMenuItemSimple("load program from file",
-                                      () -> System.out.println("load game")));
+        root.add(() -> makeProgMenu(() -> "run program: " + loadedProg.getTitle(), loadedProg));
+        root.add(new TPMenuItemSimple("load program from file (XML)", () -> loadProgramXML()));
         root.add(makeGlobalMenu());
         root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
         return root;
@@ -69,14 +76,22 @@ public class App {
     }
 
     private TPMenu makeProgMenu(TPProgram prog) {
-        TPMenu m = new TPMenu(prog.getTitle());
+        return makeProgMenu(() -> prog.getTitle(), prog);
+    }
+
+    private TPMenu makeProgMenu(Supplier<String> ss, TPProgram prog) {
+        TPMenu m = new TPMenu(ss);
+        m.setInitAction(() -> {
+                System.out.println("prog-menu --> init-action");
+                base.setProgram(prog);
+            });
         m.add(new TPMenuItemSimple("RUN", () -> {
                     base.setProgram(prog);
                     base.hideMenu();
         }));
         m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer(true)));
         m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
-        m.add(new TPMenuItemBool("pause when menu active: ",
+        m.add(new TPMenuItemBool("pause when menu active ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
         m.add(new TPMenuItemSimple(() -> "step forward by " + stopAfterVal + " frames",
@@ -90,21 +105,15 @@ public class App {
         m.add(makePlayerMenu(prog));
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
-        m.add(new TPMenuItemSimple("print player info", () -> {
-                    TPPlayer p = prog.getPlayer();
-                    System.out.println("==============================\n");
-                    System.out.println("TPPlayer INPUT = " + p.getInputHandler() + "\n");
-                    System.out.println("ARCHETYPE:\n" + p.getArchetype().infoString());
-                    System.out.println("ACTOR:\n" + p.getActor().infoString());
-                    System.out.println("==============================");
-        }));
-        m.add(new TPMenuItemBool("show line-intersection points: ",
+        m.add(makeInfoPrintMenu(prog));
+        m.add(new TPMenuItemBool("show line-intersection points ",
                                  prog::isShowIntersections,
                                  prog::setShowIntersections));
-        m.add(new TPMenuItemBool("smear-mode: ",
+        m.add(new TPMenuItemBool("smear-mode ",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
         m.add(makeBGColorMenu(prog));
+        m.add(new TPMenuItemSimple("save state to disk (XML)", () -> saveProgramXML(prog)));
         m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
                                           "DEACTIVATE EDITOR" : "activate editor"),
                                    () -> window.setEditorMode(!window.isEditorMode())));
@@ -157,15 +166,43 @@ public class App {
                                     () -> prog.getPlayer().setInputHandler(ih));
     }
 
-    private SlideShowProgram makeSlideShow() {
-        SlideShowProgram slides = new SlideShowProgram("Intro Slides");
-        addSlide(slides, "toothpick_slideshow01.png");
-        addSlide(slides, "toothpick_slideshow02.png");
-        addSlide(slides, "toothpick_slideshow03.png");
-        return slides;
+    private TPMenu makeInfoPrintMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("print info");
+        m.add(new TPMenuItemSimple("print player info", () -> {
+                    TPPlayer p = prog.getPlayer();
+                    System.out.println("==============================");
+                    System.out.println("TPPlayer INPUT = " + p.getInputHandler() + "\n");
+                    System.out.println("ARCHETYPE:\n" + p.getArchetype().infoString());
+                    System.out.println("ACTOR:\n" + p.getActor().infoString());
+                    System.out.println("==============================");
+        }));
+        m.add(new TPMenuItemSimple("print game info", () -> {
+                    System.out.println("==============================");
+                    System.out.println("class = " + prog.getClass());
+                    System.out.println("title = " + prog.getTitle());
+                    System.out.println("bounds = " + prog.getBounds());
+                    System.out.println("bg color = " + prog.getBGColor());
+                    System.out.println("smear-mode = " + prog.isSmearMode());
+                    System.out.println("show intersection = " + prog.isShowIntersections());
+                    System.out.println("pause for menu = " + prog.getPauseForMenu());
+                    System.out.println("num actors = " + prog.numActors());
+                    System.out.println("==============================");
+        }));
+        return m;
     }
 
-    private void addSlide(SlideShowProgram slides, String filename) {
+    private TPProgram makeIntroSlidesProg() {
+        NumDronesProgram prog = new NumDronesProgram("Intro Slideshow");
+        Slideshow ss = new Slideshow();
+        addSlide(ss, "toothpick_slideshow01.png");
+        addSlide(ss, "toothpick_slideshow02.png");
+        addSlide(ss, "toothpick_slideshow03.png");
+        prog.addBehaviour(ss);
+        prog.setPauseForMenu(false);
+        return prog;
+    }
+
+    private void addSlide(Slideshow slides, String filename) {
         try {
             URL url = ClassLoader.getSystemClassLoader().getResource(filename);
             Image img = ImageIO.read(url);
@@ -179,8 +216,8 @@ public class App {
         }
     }
 
-    private ToothpickProgram makeProgStaticToothpick() {
-        ToothpickProgram tpp = new ToothpickProgram("Static Toothpicks") {
+    private TPProgram makeProgStaticToothpick() {
+        TPProgram tpp = new TPProgram("Static Toothpicks") {
                 @Override
                 public void init() {
                     super.init();
@@ -194,6 +231,7 @@ public class App {
                 }
             };
         tpp.setShowIntersections(true);
+        tpp.addBehaviour(new ToothpickPhysics());
         return tpp;
     }
 
@@ -234,16 +272,13 @@ public class App {
         return m;
     }
 
-    public static void main(String[] args) {
-        App app = new App();
-        app.run();
-    }
-
-    private class RibbonGame extends NumDronesProgram {
+    public static class RibbonGame extends NumDronesProgram {
 
         public RibbonGame() {
             super("Ribbon Game");
             setSmearMode(true);
+            getPlayer().getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
+            initPlayer();
         }
 
         @Override
@@ -253,28 +288,74 @@ public class App {
         }
     }
 
-    private class MixedDronesGame extends NumDronesProgram {
+    public static class MixedDronesGame extends NumDronesProgram {
 
         public MixedDronesGame() {
             super("Mixed Drones Game");
-            setDroneSupplier(this::makeDrone);
+            setDroneFunc(this::makeDrone);
             setDronesGoal(6);
-        }
-
-        @Override
-        public void init() {
-            super.init();
             setBGColor(Color.BLACK);
         }
 
-        private TPActor makeDrone() {
+        private TPActor makeDrone(TPProgram prog) {
             double r = Math.random();
             if (r < 0.333)
-                return TPFactory.lineActor(getBounds());
+                return TPFactory.lineActor(prog);
             if (r < 0.666)
-                return TPFactory.regularPolygonActor(getBounds());
-            return TPFactory.regularThistleActor(getBounds());
+                return TPFactory.regularPolygonActor(prog);
+            return TPFactory.regularThistleActor(prog);
         }
+    }
+
+    /**
+     * <p>Launches file chooser dialog and then attempts to load the selected file as a
+     * TPProgram.</p>
+     */
+    private void loadProgramXML() {
+        System.out.println("Load program from XML...");
+        JFileChooser chooser = new JFileChooser(saveDir);
+        FileNameExtensionFilter filter
+            = new FileNameExtensionFilter("Toothpick XML files", "xml");
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(window);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File f = chooser.getSelectedFile();
+            System.out.println("... file chosen: " + f.getName());
+            TPXml xml = new TPXml();
+            TPProgram prog = xml.load(f);
+            for (String msg : xml.getErrorMessages())
+                System.out.println("TPXml Error: " + msg);
+            if (prog == null) {
+                System.out.println("... couldn't load file!");
+            } else {
+                System.out.println("... program loaded: " + prog.getTitle());
+                loadedProg = prog;
+            }
+        }
+    }
+
+    private void saveProgramXML(TPProgram prog) {
+        System.out.println("Save program to XML: " + prog.getTitle());
+        JFileChooser chooser = new JFileChooser(saveDir);
+        int returnVal = chooser.showSaveDialog(window);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File f = chooser.getSelectedFile();
+            System.out.println("... file chosen: " + f.getName());
+            TPXml xml = new TPXml();
+            boolean success = xml.save(prog, f);
+            for (String msg : xml.getErrorMessages())
+                System.out.println("TPXml Error: " + msg);
+            if (success) {
+                System.out.println("... saved file");
+            } else {
+                System.out.println("... couldn't save file!");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        App app = new App();
+        app.run();
     }
 
 }
