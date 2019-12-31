@@ -60,8 +60,7 @@ public class App {
         m.add(makeProgMenuNumDrones(new MixedDronesGame()));
         m.add(new TPMenuItemSimple("Increment num enemies game",
                                    () -> System.out.println("increment")));
-        m.add(new TPMenuItemSimple("scrolling map game",
-                                   () -> System.out.println("scrolling map")));
+        m.add(makeProgMenuNumDrones(makeScrollingGame()));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("powerups game",
@@ -118,10 +117,10 @@ public class App {
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
         m.add(makeInfoPrintMenu(prog));
-        m.add(new TPMenuItemBool("show line-intersection points ",
+        m.add(new TPMenuItemBool("show line-intersection points",
                                  prog::isShowIntersections,
                                  prog::setShowIntersections));
-        m.add(new TPMenuItemBool("smear-mode ",
+        m.add(new TPMenuItemBool("smear-mode",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
         m.add(makeBGColorMenu(prog));
@@ -317,6 +316,13 @@ public class App {
                 return TPFactory.regularPolygonActor(prog);
             return TPFactory.regularThistleActor(prog);
         }
+    }
+
+    private NumDronesProgram makeScrollingGame() {
+        NumDronesProgram prog = new MixedDronesGame();
+        prog.setTitle("Scrolling Game");
+        prog.addBehaviour(new ScrollWithPlayer());
+        return prog;
     }
 
     /**
