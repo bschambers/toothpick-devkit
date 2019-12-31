@@ -103,6 +103,18 @@ public class App {
                                  () -> stopAfterVal--,
                                  () -> stopAfterVal++));
         m.add(makePlayerMenu(prog));
+        m.add(new TPMenuItemIncr("TRANSFORM: x-offset",
+                                 () -> "" + prog.getGeometry().xOffset,
+                                 () -> prog.getGeometry().xOffset -= 10,
+                                 () -> prog.getGeometry().xOffset += 10));
+        m.add(new TPMenuItemIncr("TRANSFORM: y-offset",
+                                 () -> "" + prog.getGeometry().yOffset,
+                                 () -> prog.getGeometry().yOffset -= 10,
+                                 () -> prog.getGeometry().yOffset += 10));
+        m.add(new TPMenuItemIncr("TRANSFORM: scaling",
+                                 () -> "" + prog.getGeometry().scale,
+                                 () -> prog.getGeometry().scale -= 0.1,
+                                 () -> prog.getGeometry().scale += 0.1));
         m.add(new TPMenuItemSimple("collision detection type",
                                    () -> System.out.println("collision detection")));
         m.add(makeInfoPrintMenu(prog));
@@ -180,7 +192,7 @@ public class App {
                     System.out.println("==============================");
                     System.out.println("class = " + prog.getClass());
                     System.out.println("title = " + prog.getTitle());
-                    System.out.println("bounds = " + prog.getBounds());
+                    System.out.println("geometry = " + prog.getGeometry());
                     System.out.println("bg color = " + prog.getBGColor());
                     System.out.println("smear-mode = " + prog.isSmearMode());
                     System.out.println("show intersection = " + prog.isShowIntersections());

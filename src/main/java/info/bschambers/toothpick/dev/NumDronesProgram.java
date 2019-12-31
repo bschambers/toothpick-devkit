@@ -5,6 +5,7 @@ import info.bschambers.toothpick.TPProgram;
 import info.bschambers.toothpick.ToothpickPhysics;
 import info.bschambers.toothpick.actor.TPActor;
 import info.bschambers.toothpick.actor.TPFactory;
+import info.bschambers.toothpick.geom.Pt;
 import java.util.function.Function;
 
 /**
@@ -20,7 +21,8 @@ public class NumDronesProgram extends TPProgram {
     public NumDronesProgram() {
         addBehaviour(new ToothpickPhysics());
         addBehaviour(numBehaviour);
-        setPlayer(TPFactory.playerLine(getBounds().center()));
+        setPlayer(TPFactory.playerLine(new Pt(getGeometry().getXCenter(),
+                                              getGeometry().getYCenter())));
     }
 
     public NumDronesProgram(String title) {
