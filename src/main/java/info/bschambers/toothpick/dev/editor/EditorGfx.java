@@ -1,5 +1,6 @@
 package info.bschambers.toothpick.dev.editor;
 
+import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.geom.Geom;
 import info.bschambers.toothpick.ui.swing.Gfx;
 import java.awt.Color;
@@ -7,12 +8,12 @@ import java.awt.Graphics;
 
 public final class EditorGfx {
 
-    public static void actorEditor(Graphics g, ActorEditor ae) {
+    public static void actorEditor(Graphics g, TPGeometry geom, ActorEditor ae) {
         // rotation indicator
-        int x1 = ae.getPosX();
-        int y1 = ae.getPosY();
-        int x2 = ae.getInertiaPosX();
-        int y2 = ae.getInertiaPosY();
+        int x1 = (int) geom.xToScreen(ae.getPosX());
+        int y1 = (int) geom.yToScreen(ae.getPosY());
+        int x2 = (int) geom.xToScreen(ae.getInertiaPosX());
+        int y2 = (int) geom.yToScreen(ae.getInertiaPosY());
         int rScale = 15000;
         int angleTranslationFactor = 58;
         int len = 60;
@@ -22,17 +23,22 @@ public final class EditorGfx {
         int arcAngle = (int) -(ae.getActor().angleInertia * rScale);
         g.setColor(Color.CYAN);
         Gfx.arc(g, rx, ry, len, startAngle, arcAngle);
-        // control handles
+        // inertia vector
         g.setColor(Color.GRAY);
-        g.drawLine(ae.getPosX(), ae.getPosY(), ae.getInertiaPosX(), ae.getInertiaPosY());
+        Gfx.line(g, geom, ae.getPosX(), ae.getPosY(),
+                 ae.getInertiaPosX(), ae.getInertiaPosY());
+        // position control handle
         g.setColor(Color.GREEN);
-        Gfx.rectangle(g, ae.getPositionHandle());
-        g.setColor(Color.PINK);
-        Gfx.rectangle(g, ae.getInertiaHandle());
+        Gfx.rectangle(g, ae.getPositionHandle(geom));
         if (ae.isSelected()) {
+            int x = (int) geom.xToScreen(ae.getPosX());
+            int y = (int) geom.yToScreen(ae.getPosY());
             g.setColor(Color.RED);
-            Gfx.centeredSquare(g, ae.getPosX(), ae.getPosY(), 40);
+            Gfx.centeredSquare(g, x, y, 40);
         }
+        // inertia control handle
+        g.setColor(Color.PINK);
+        Gfx.rectangle(g, ae.getInertiaHandle(geom));
     }
 
 }

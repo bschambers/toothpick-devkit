@@ -1,5 +1,6 @@
 package info.bschambers.toothpick.dev.editor;
 
+import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.TPProgram;
 import info.bschambers.toothpick.actor.TPActor;
 import info.bschambers.toothpick.ui.swing.Gfx;
@@ -31,11 +32,16 @@ public class TPEditor extends TPSwingUI {
     private Rectangle selectRect = null;
     private ActorEditor selectedAE = null;
     private boolean inertiaHandleSelected = false;
+    private boolean showCursor = true;
     // keyboard
     private boolean shiftDown = false;
 
     public TPEditor() {
         super("Toothpick Editor");
+    }
+
+    private TPGeometry getGeom() {
+        return getProgram().getGeometry();
     }
 
     public boolean isEditorMode() {
@@ -88,7 +94,12 @@ public class TPEditor extends TPSwingUI {
                 Gfx.rectangle(g, selectRect);
             }
             for (ActorEditor ae : actEds)
-                EditorGfx.actorEditor(g, ae);
+                EditorGfx.actorEditor(g, getGeom(), ae);
+            // paint cursor
+            if (showCursor) {
+                g.setColor(Color.GRAY);
+                Gfx.crosshairs(g, currentP.x, currentP.y, 50);
+            }
         }
     }
 
@@ -149,14 +160,16 @@ public class TPEditor extends TPSwingUI {
     private void selectAE(Point p) {
         selectedAE = null;
         inertiaHandleSelected = false;
+
         Insets insets = getInsets();
         p = new Point(p.x, p.y - insets.top);
+
         Choosing:
         for (ActorEditor ae : actEds) {
-            if (ae.getPositionHandle().contains(p)) {
+            if (ae.getPositionHandle(getGeom()).contains(p)) {
                 selectedAE = ae;
                 break Choosing;
-            } else if (ae.getInertiaHandle().contains(p)) {
+            } else if (ae.getInertiaHandle(getGeom()).contains(p)) {
                 inertiaHandleSelected = true;
                 selectedAE = ae;
                 break Choosing;
@@ -177,7 +190,8 @@ public class TPEditor extends TPSwingUI {
     private void updateSelection() {
         if (selectRect != null) {
             for (ActorEditor ae : actEds) {
-                if (selectRect.contains(ae.getPosX(), ae.getPosY())) {
+                if (selectRect.contains(getGeom().xToScreen(ae.getPosX()),
+                                        getGeom().yToScreen(ae.getPosY()))) {
                     ae.setSelected(true);
                 } else {
                     ae.setSelected(false);
@@ -207,8 +221,9 @@ public class TPEditor extends TPSwingUI {
     /*-------------------------- Mouse Input ---------------------------*/
 
     private void setPoint(Point p, MouseEvent e) {
+        Insets insets = getInsets();
         p.x = e.getPoint().x;
-        p.y = e.getPoint().y;
+        p.y = e.getPoint().y - insets.top;
     }
 
     @Override
@@ -259,6 +274,7 @@ public class TPEditor extends TPSwingUI {
             int y = currentP.y - prevP.y;
             prevP.x = currentP.x;
             prevP.y = currentP.y;
+            TPGeometry geom = getGeom();
 
             if (mode == Mode.SELECT_RECT) {
 
@@ -270,10 +286,12 @@ public class TPEditor extends TPSwingUI {
                 updateSelection();
 
             } else if (mode == Mode.MOVE_INERTIA) {
-                if (selectedAE != null) {
+                if (selectedAE != null && geom.scale != 0) {
                     ActorEditor sae = selectedAE;
-                    double ix = sae.getActor().xInertia + (x / (double) sae.getInertiaScale());
-                    double iy = sae.getActor().yInertia + (y / (double) sae.getInertiaScale());
+                    double ix = sae.getActor().xInertia
+                        + ((x / (double) sae.getInertiaScale()) / geom.scale);
+                    double iy = sae.getActor().yInertia
+                        + ((y / (double) sae.getInertiaScale()) / geom.scale);
                     for (ActorEditor ae : actEds) {
                         if (ae.isSelected()) {
                             ae.getActor().xInertia = ix;
@@ -297,9 +315,9 @@ public class TPEditor extends TPSwingUI {
 
             } else if (mode == Mode.MOVE_ACTOR) {
                 for (ActorEditor ae : actEds) {
-                    if (ae.isSelected()) {
-                        ae.getActor().x += x;
-                        ae.getActor().y += y;
+                    if (ae.isSelected() && geom.scale != 0) {
+                        ae.getActor().x += (x / geom.scale);
+                        ae.getActor().y += (y / geom.scale);
                         ae.getActor().updateForm();
                     }
                 }

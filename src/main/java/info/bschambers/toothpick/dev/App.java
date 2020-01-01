@@ -83,6 +83,7 @@ public class App {
         m.setInitAction(() -> {
                 System.out.println("prog-menu --> init-action");
                 base.setProgram(prog);
+                prog.housekeeping();
             });
         m.add(new TPMenuItemSimple("RUN", () -> {
                     base.setProgram(prog);
