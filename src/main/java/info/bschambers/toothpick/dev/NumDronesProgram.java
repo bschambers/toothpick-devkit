@@ -21,8 +21,6 @@ public class NumDronesProgram extends TPProgram {
     public NumDronesProgram() {
         addBehaviour(new ToothpickPhysics());
         addBehaviour(numBehaviour);
-        setPlayer(TPFactory.playerLine(new Pt(getGeometry().getXCenter(),
-                                              getGeometry().getYCenter())));
     }
 
     public NumDronesProgram(String title) {

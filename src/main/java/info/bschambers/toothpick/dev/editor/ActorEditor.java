@@ -60,6 +60,8 @@ public class ActorEditor {
         posY = (int) getActor().y;
         int x = posX - (posHandleSize / 2);
         int y = posY - (posHandleSize / 2);
+        inerPosX = posX + (int) (getActor().xInertia * inertiaScale);
+        inerPosY = posY + (int) (getActor().yInertia * inertiaScale);
     }
 
 }

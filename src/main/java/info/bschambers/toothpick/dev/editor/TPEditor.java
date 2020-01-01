@@ -109,8 +109,8 @@ public class TPEditor extends TPSwingUI {
         if (editorMode) {
             g.setColor(Color.WHITE);
             int midX = getWidth() / 2;
-            int y = 30;
-            g.drawString("Editor Mode: " + mode, midX, y);
+            g.drawString("Editor Mode: " + mode, midX, 30);
+            g.drawString("point : " + currentP.x + ", " + currentP.y, midX, 45);
         }
     }
 

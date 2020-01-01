@@ -45,7 +45,7 @@ public class App {
         TPMenu root = new TPMenu("MAIN MENU");
         root.add(makeMenuPresetProgram());
         root.add(() -> makeProgMenu(() -> "run program: " + loadedProg.getTitle(), loadedProg));
-        root.add(new TPMenuItemSimple("load program from file (XML)", () -> loadProgramXML()));
+        root.add(new TPMenuItemSimple("load program from file", () -> loadProgramXML()));
         root.add(makeGlobalMenu());
         root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
         return root;
@@ -83,10 +83,9 @@ public class App {
         m.setInitAction(() -> {
                 System.out.println("prog-menu --> init-action");
                 base.setProgram(prog);
-                prog.housekeeping();
+                prog.updateActorsInPlace();
             });
         m.add(new TPMenuItemSimple("RUN", () -> {
-                    base.setProgram(prog);
                     base.hideMenu();
         }));
         m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer(true)));
@@ -132,10 +131,6 @@ public class App {
         return m;
     }
 
-    private String rgbStr(Color c) {
-        return c.getRed() + ", " + c.getGreen() + ", " + c.getBlue();
-    }
-
     private TPMenu makeBGColorMenu(TPProgram prog) {
         TPMenu m = new TPMenu(() -> "Set BG Color (current: " + rgbStr(prog.getBGColor()) + ")");
         m.add(new TPMenuItemSimple("black", () -> prog.setBGColor(Color.BLACK)));
@@ -159,7 +154,7 @@ public class App {
         m.add(makePlayerControllerMenu(prog));
         m.add(new TPMenuItemSimple("re-define keys", () -> System.out.println("...")));
         m.add(new TPMenuItemSimple("calibrate input", () -> System.out.println("...")));
-        m.add(new TPMenuItemSimple("preset players", () -> System.out.println("...")));
+        m.add(makePresetPlayersMenu(prog));
         return m;
     }
 
@@ -178,12 +173,20 @@ public class App {
                                     () -> prog.getPlayer().setInputHandler(ih));
     }
 
+    private TPMenu makePresetPlayersMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("preset players");
+        m.add(new TPMenuItemSimple("line-player",
+                                   () -> prog.setPlayer(TPFactory.playerLine(centerPt(prog)))));
+        return m;
+    }
+
     private TPMenu makeInfoPrintMenu(TPProgram prog) {
         TPMenu m = new TPMenu("print info");
         m.add(new TPMenuItemSimple("print player info", () -> {
                     TPPlayer p = prog.getPlayer();
                     System.out.println("==============================");
-                    System.out.println("TPPlayer INPUT = " + p.getInputHandler() + "\n");
+                    System.out.println("PLAYER = " + p);
+                    System.out.println("INPUT = " + p.getInputHandler() + "\n");
                     System.out.println("ARCHETYPE:\n" + p.getArchetype().infoString());
                     System.out.println("ACTOR:\n" + p.getActor().infoString());
                     System.out.println("==============================");
@@ -375,6 +378,18 @@ public class App {
     public static void main(String[] args) {
         App app = new App();
         app.run();
+    }
+
+    /*------------------------ utility methods -------------------------*/
+
+    private Pt centerPt(TPProgram prog) {
+        return new Pt(prog.getGeometry().getXCenter(),
+                      prog.getGeometry().getYCenter());
+
+    }
+
+    private String rgbStr(Color c) {
+        return c.getRed() + ", " + c.getGreen() + ", " + c.getBlue();
     }
 
 }
