@@ -58,8 +58,7 @@ public class App {
         m.add(makeProgMenuNumDrones(makeProgSimpleNumDronesGame()));
         m.add(makeProgMenuNumDrones(new RibbonGame()));
         m.add(makeProgMenuNumDrones(new MixedDronesGame()));
-        m.add(new TPMenuItemSimple("Increment num enemies game",
-                                   () -> System.out.println("increment")));
+        m.add(makeProgMenuNumDrones(makeIncrementNumDronesGame()));
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
@@ -88,7 +87,13 @@ public class App {
         m.add(new TPMenuItemSimple("RUN", () -> {
                     base.hideMenu();
         }));
-        m.add(new TPMenuItemSimple("revive player", () -> prog.revivePlayer(true)));
+        m.add(new TPMenuItemSimple("revive player", () -> {
+                    if (prog.getPlayer() == TPPlayer.NULL) {
+                        System.out.println("Null-player - adding default...");
+                        prog.setPlayer(TPFactory.playerLine(centerPt(prog)));
+                    }
+                    prog.revivePlayer(true);
+        }));
         m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
         m.add(new TPMenuItemBool("pause when menu active ",
                                  prog::getPauseForMenu,
@@ -175,7 +180,7 @@ public class App {
     private TPMenu makePresetPlayersMenu(TPProgram prog) {
         TPMenu m = new TPMenu("preset players");
         m.add(new TPMenuItemSimple("line-player",
-                                   () -> prog.setPlayer(TPFactory.playerLine(centerPt(prog)))));
+                                   () -> prog.setPlayer(playerPresetLine(prog))));
         return m;
     }
 
@@ -261,6 +266,7 @@ public class App {
             };
         tpp.setShowIntersections(true);
         tpp.addBehaviour(new ToothpickPhysics());
+        tpp.init();
         return tpp;
     }
 
@@ -306,8 +312,11 @@ public class App {
         public RibbonGame() {
             super("Ribbon Game");
             setSmearMode(true);
-            getPlayer().getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
+            TPPlayer p = playerPresetLine(this);
+            p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
+            setPlayer(p);
             initPlayer();
+            setBGColor(ColorGetter.randColor());
         }
 
         @Override
@@ -334,6 +343,14 @@ public class App {
                 return TPFactory.regularPolygonActor(prog);
             return TPFactory.regularThistleActor(prog);
         }
+    }
+
+    private NumDronesProgram makeIncrementNumDronesGame() {
+        NumDronesProgram prog = new MixedDronesGame();
+        prog.setTitle("Increment Num-Drones Game");
+        prog.setDronesGoal(1);
+        prog.addBehaviour(new NumDronesProgram.IncrementNumDronesWithScore());
+        return prog;
     }
 
     private NumDronesProgram makeScrollingGame() {
@@ -394,16 +411,20 @@ public class App {
         app.run();
     }
 
-    /*------------------------ utility methods -------------------------*/
+    /*--------------------- static utility methods ---------------------*/
 
-    private Pt centerPt(TPProgram prog) {
+    private static Pt centerPt(TPProgram prog) {
         return new Pt(prog.getGeometry().getXCenter(),
                       prog.getGeometry().getYCenter());
 
     }
 
-    private String rgbStr(Color c) {
+    private static String rgbStr(Color c) {
         return c.getRed() + ", " + c.getGreen() + ", " + c.getBlue();
+    }
+
+    private static TPPlayer playerPresetLine(TPProgram prog) {
+        return TPFactory.playerLine(centerPt(prog));
     }
 
 }

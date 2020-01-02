@@ -1,6 +1,7 @@
 package info.bschambers.toothpick.dev;
 
 import info.bschambers.toothpick.MaintainDronesNum;
+import info.bschambers.toothpick.ProgramBehaviour;
 import info.bschambers.toothpick.TPProgram;
 import info.bschambers.toothpick.ToothpickPhysics;
 import info.bschambers.toothpick.actor.TPActor;
@@ -38,6 +39,17 @@ public class NumDronesProgram extends TPProgram {
 
     public void setDroneFunc(Function<TPProgram, TPActor> func) {
         numBehaviour.setDroneFunc(func);
+    }
+
+    public static class IncrementNumDronesWithScore implements ProgramBehaviour {
+        @Override
+        public void update(TPProgram prog) {
+            if (prog instanceof NumDronesProgram) {
+                NumDronesProgram ndp = (NumDronesProgram) prog;
+                int num = prog.getPlayer().getActor().statsNumKills;
+                ndp.setDronesGoal(Math.max(1, (int) (num / 10.0)));
+            }
+        }
     }
 
 }
