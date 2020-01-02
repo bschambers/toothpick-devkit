@@ -114,8 +114,7 @@ public class App {
                                  () -> "" + prog.getGeometry().scale,
                                  () -> prog.getGeometry().scale -= 0.1,
                                  () -> prog.getGeometry().scale += 0.1));
-        m.add(new TPMenuItemSimple("collision detection type",
-                                   () -> System.out.println("collision detection")));
+        m.add(makePhysicsMenu(prog));
         m.add(makeInfoPrintMenu(prog));
         m.add(new TPMenuItemBool("show line-intersection points",
                                  prog::isShowIntersections,
@@ -178,6 +177,21 @@ public class App {
         m.add(new TPMenuItemSimple("line-player",
                                    () -> prog.setPlayer(TPFactory.playerLine(centerPt(prog)))));
         return m;
+    }
+
+    private TPMenu makePhysicsMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("physics type");
+        m.add(makePhysicsSwitcherItem(prog, new ToothpickPhysics()));
+        m.add(makePhysicsSwitcherItem(prog, new ToothpickPhysicsLight()));
+        return m;
+    }
+
+    private TPMenuItem makePhysicsSwitcherItem(TPProgram prog, ToothpickPhysics physics) {
+        String name = physics.getClass().getSimpleName();
+        return new TPMenuItemSimple(name, () -> {
+                prog.addBehaviour(physics);
+                System.out.println("Switch to " + name);
+        });
     }
 
     private TPMenu makeInfoPrintMenu(TPProgram prog) {
