@@ -14,6 +14,32 @@ $ gradlew jar
 
 NOTE: build.gradle locates the toothpick-engine library at ~/lib/toothpick-engine.jar.
 
+* Usage
+
+** Introduction
+
+On running the devkit app a demonstration program starts running immediately.
+
+Press ~ESC~ to open the main menu.
+
+** TPEditor
+
+When editor-mode is activated, control handles will appear on every actor which
+allow basic manipulations to be done interactively.
+
+Left-click and drag on either the position handle or the inertia handle to
+change it.
+
+Angle-inertia can be changed by holding ~SHIFT~ and then left-click and drag the
+position handle up or down.
+
+You can select multiple actors at once by dragging the rectangular selection
+area - just left-click and drag, making sure that you don't begin on any
+actor-control handle.
+
+When you have multiple actors selected then dragging the control-handle of one
+actor will affect all selected actors likewise.
+
 * License
 
 Copyright 2019-present B. S. Chambers.
