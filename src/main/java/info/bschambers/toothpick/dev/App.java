@@ -7,12 +7,14 @@ import info.bschambers.toothpick.diskops.TPXml;
 import info.bschambers.toothpick.geom.*;
 import info.bschambers.toothpick.ui.*;
 import info.bschambers.toothpick.ui.swing.TPSwingUI;
+import info.bschambers.toothpick.util.RandomChooser;
 import java.awt.Color;
 import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
@@ -150,6 +152,18 @@ public class App {
         m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
                                  () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
                                  () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
+        m.add(makeDroneChooserMenu(prog));
+        return m;
+    }
+
+    private TPMenu makeDroneChooserMenu(NumDronesProgram prog) {
+        TPMenu m = new TPMenu("Adjust Drone-Chooser Weighting");
+        for (RandomChooser<Function<TPProgram, TPActor>>.ChooserItem item : prog.getChooser().chooserItemList()) {
+            m.add(new TPMenuItemIncr(item.getDescription(),
+                                     () -> "" + item.weight,
+                                     () -> item.weight--,
+                                     () -> item.weight++));
+        }
         return m;
     }
 
@@ -327,21 +341,14 @@ public class App {
     }
 
     public static class MixedDronesGame extends NumDronesProgram {
-
         public MixedDronesGame() {
             super("Mixed Drones Game");
-            setDroneFunc(this::makeDrone);
+            addDroneFunc("line", 1, TPFactory::lineActor);
+            addDroneFunc("polygon", 1, TPFactory::regularPolygonActor);
+            addDroneFunc("thistle", 1, TPFactory::regularThistleActor);
+            addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
             setDronesGoal(6);
             setBGColor(Color.BLACK);
-        }
-
-        private TPActor makeDrone(TPProgram prog) {
-            double r = Math.random();
-            if (r < 0.333)
-                return TPFactory.lineActor(prog);
-            if (r < 0.666)
-                return TPFactory.regularPolygonActor(prog);
-            return TPFactory.regularThistleActor(prog);
         }
     }
 

@@ -7,6 +7,7 @@ import info.bschambers.toothpick.ToothpickPhysics;
 import info.bschambers.toothpick.actor.TPActor;
 import info.bschambers.toothpick.actor.TPFactory;
 import info.bschambers.toothpick.geom.Pt;
+import info.bschambers.toothpick.util.RandomChooser;
 import java.util.function.Function;
 
 /**
@@ -18,10 +19,14 @@ import java.util.function.Function;
 public class NumDronesProgram extends TPProgram {
 
     private MaintainDronesNum numBehaviour = new MaintainDronesNum();
+    private RandomChooser<Function<TPProgram, TPActor>> chooser;
 
     public NumDronesProgram() {
         addBehaviour(new ToothpickPhysics());
         addBehaviour(numBehaviour);
+        numBehaviour.setDroneFunc((TPProgram prog) -> makeDrone(prog));
+        // add some chooser options
+        chooser = new RandomChooser<Function<TPProgram, TPActor>>((TPProgram prog) -> TPFactory.lineActor(prog));
     }
 
     public NumDronesProgram(String title) {
@@ -37,8 +42,17 @@ public class NumDronesProgram extends TPProgram {
         numBehaviour.setDronesGoal(val);
     }
 
-    public void setDroneFunc(Function<TPProgram, TPActor> func) {
-        numBehaviour.setDroneFunc(func);
+    public void addDroneFunc(String description, int weight, Function<TPProgram, TPActor> func) {
+        chooser.add(description, weight, func);
+    }
+
+    private TPActor makeDrone(TPProgram prog) {
+        Function<TPProgram, TPActor> func = chooser.get();
+        return func.apply(prog);
+    }
+
+    public RandomChooser<Function<TPProgram, TPActor>> getChooser() {
+        return chooser;
     }
 
     public static class IncrementNumDronesWithScore implements ProgramBehaviour {
