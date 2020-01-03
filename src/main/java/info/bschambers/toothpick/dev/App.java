@@ -347,6 +347,7 @@ public class App {
             addDroneFunc("polygon", 1, TPFactory::regularPolygonActor);
             addDroneFunc("thistle", 1, TPFactory::regularThistleActor);
             addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
+            addDroneFunc("shooter", 1, TPFactory::shooterActor);
             setDronesGoal(6);
             setBGColor(Color.BLACK);
         }

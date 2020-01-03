@@ -55,13 +55,17 @@ public class NumDronesProgram extends TPProgram {
         return chooser;
     }
 
+    /**
+     * <p>This ProgramBehaviour requires NumDronesProgram - it sets the drones-number goal
+     * based on the number of kills achieved by players numKills parameter.</p>
+     */
     public static class IncrementNumDronesWithScore implements ProgramBehaviour {
         @Override
         public void update(TPProgram prog) {
             if (prog instanceof NumDronesProgram) {
                 NumDronesProgram ndp = (NumDronesProgram) prog;
-                int num = prog.getPlayer().getActor().statsNumKills;
-                ndp.setDronesGoal(Math.max(1, (int) (num / 10.0)));
+                int num = prog.getPlayer().getActor().numKills;
+                ndp.setDronesGoal(Math.max(1, (int) (num / 7.0)));
             }
         }
     }
