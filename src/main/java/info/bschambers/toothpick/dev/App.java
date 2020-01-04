@@ -129,6 +129,12 @@ public class App {
         m.add(new TPMenuItemBool("smear-mode",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
+        m.add(new TPMenuItemBool("show program info",
+                                 prog::getShowProgramInfo,
+                                 prog::setShowProgramInfo));
+        m.add(new TPMenuItemBool("show debug info",
+                                 prog::getShowDebugInfo,
+                                 prog::setShowDebugInfo));
         m.add(makeBGColorMenu(prog));
         m.add(new TPMenuItemSimple("save state to disk (XML)", () -> saveProgramXML(prog)));
         m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
@@ -316,8 +322,6 @@ public class App {
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
         m.add(new TPMenuItemSimple("show bounding boxes",
                                    () -> System.out.println("bounding boxes")));
-        m.add(new TPMenuItemSimple("show diagnostics",
-                                   () -> System.out.println("diagnostics")));
         return m;
     }
 
