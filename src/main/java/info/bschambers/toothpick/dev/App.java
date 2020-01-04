@@ -5,6 +5,7 @@ import info.bschambers.toothpick.actor.*;
 import info.bschambers.toothpick.dev.editor.TPEditor;
 import info.bschambers.toothpick.diskops.TPXml;
 import info.bschambers.toothpick.geom.*;
+import info.bschambers.toothpick.sound.*;
 import info.bschambers.toothpick.ui.*;
 import info.bschambers.toothpick.ui.swing.TPSwingUI;
 import info.bschambers.toothpick.util.RandomChooser;
@@ -25,6 +26,7 @@ public class App {
     private TPEditor window;
     private TPBase base;
     private TPProgram introSlides;
+    private TPSound sound;
     private int stopAfterVal = 5;
     private TPProgram loadedProg = new TPProgram("NULL PROGRAM");
     private String saveDir = "data/saved-games";
@@ -32,15 +34,37 @@ public class App {
     public App() {
         window = new TPEditor();
         base = new TPBase();
+        sound = makeSoundModule();
         introSlides = makeIntroSlidesProg();
         base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
+        base.setSound(sound);
     }
 
     public void run() {
         window.setVisible(true);
         base.run();
+    }
+
+    private TPSound makeSoundModule() {
+        TPSampledSound sampled = new TPSampledSound();
+        addSfxFile(sampled, "sfx/cymbals/cymbal01.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal02.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal03.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal04.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal05.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal06.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal07.wav");
+        addSfxFile(sampled, "sfx/cymbals/cymbal08.wav");
+        return sampled;
+    }
+
+    private void addSfxFile(TPSampledSound sampled, String filename) {
+        System.out.println("try to add sound file: " + filename);
+        URL url = ClassLoader.getSystemClassLoader().getResource(filename);
+        System.out.println("... got url: " + url);
+        sampled.addSoundFile(new File(url.getPath()));
     }
 
     private TPMenu makeMenu() {
@@ -109,18 +133,7 @@ public class App {
                                  () -> stopAfterVal--,
                                  () -> stopAfterVal++));
         m.add(makePlayerMenu(prog));
-        m.add(new TPMenuItemIncr("TRANSFORM: x-offset",
-                                 () -> "" + prog.getGeometry().xOffset,
-                                 () -> prog.getGeometry().xOffset -= 10,
-                                 () -> prog.getGeometry().xOffset += 10));
-        m.add(new TPMenuItemIncr("TRANSFORM: y-offset",
-                                 () -> "" + prog.getGeometry().yOffset,
-                                 () -> prog.getGeometry().yOffset -= 10,
-                                 () -> prog.getGeometry().yOffset += 10));
-        m.add(new TPMenuItemIncr("TRANSFORM: scaling",
-                                 () -> "" + prog.getGeometry().scale,
-                                 () -> prog.getGeometry().scale -= 0.1,
-                                 () -> prog.getGeometry().scale += 0.1));
+        m.add(makeScreenGeometryMenu(prog));
         m.add(makePhysicsMenu(prog));
         m.add(makeInfoPrintMenu(prog));
         m.add(new TPMenuItemBool("show line-intersection points",
@@ -129,12 +142,7 @@ public class App {
         m.add(new TPMenuItemBool("smear-mode",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
-        m.add(new TPMenuItemBool("show program info",
-                                 prog::getShowProgramInfo,
-                                 prog::setShowProgramInfo));
-        m.add(new TPMenuItemBool("show debug info",
-                                 prog::getShowDebugInfo,
-                                 prog::setShowDebugInfo));
+        m.add(makeInfoLinesMenu(prog));
         m.add(makeBGColorMenu(prog));
         m.add(new TPMenuItemSimple("save state to disk (XML)", () -> saveProgramXML(prog)));
         m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
@@ -204,6 +212,20 @@ public class App {
         return m;
     }
 
+    private TPMenu makeScreenGeometryMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("screen geometry");
+        m.add(new TPMenuItemIncr("x-offset", () -> "" + prog.getGeometry().xOffset,
+                                 () -> prog.getGeometry().xOffset -= 10,
+                                 () -> prog.getGeometry().xOffset += 10));
+        m.add(new TPMenuItemIncr("y-offset", () -> "" + prog.getGeometry().yOffset,
+                                 () -> prog.getGeometry().yOffset -= 10,
+                                 () -> prog.getGeometry().yOffset += 10));
+        m.add(new TPMenuItemIncr("scaling", () -> "" + prog.getGeometry().scale,
+                                 () -> prog.getGeometry().scale -= 0.1,
+                                 () -> prog.getGeometry().scale += 0.1));
+        return m;
+    }
+
     private TPMenu makePhysicsMenu(TPProgram prog) {
         TPMenu m = new TPMenu("physics type");
         m.add(makePhysicsSwitcherItem(prog, new ToothpickPhysics()));
@@ -242,6 +264,17 @@ public class App {
                     System.out.println("num actors = " + prog.numActors());
                     System.out.println("==============================");
         }));
+        return m;
+    }
+
+    private TPMenu makeInfoLinesMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("show info lines");
+        m.add(new TPMenuItemBool("program info",
+                                 prog::getShowProgramInfo,
+                                 prog::setShowProgramInfo));
+        m.add(new TPMenuItemBool("debug info",
+                                 prog::getShowDebugInfo,
+                                 prog::setShowDebugInfo));
         return m;
     }
 
