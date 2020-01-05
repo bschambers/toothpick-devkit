@@ -136,9 +136,7 @@ public class App {
         m.add(makeScreenGeometryMenu(prog));
         m.add(makePhysicsMenu(prog));
         m.add(makeInfoPrintMenu(prog));
-        m.add(new TPMenuItemBool("show line-intersection points",
-                                 prog::isShowIntersections,
-                                 prog::setShowIntersections));
+        m.add(makeDiagnosticsMenu(prog));
         m.add(new TPMenuItemBool("smear-mode",
                                  prog::isSmearMode,
                                  prog::setSmearMode));
@@ -267,14 +265,25 @@ public class App {
         return m;
     }
 
+    private TPMenu makeDiagnosticsMenu(TPProgram prog) {
+        TPMenu m = new TPMenu("diagnostic tools");
+        m.add(new TPMenuItemBool("show line-intersection points",
+                                 prog::isShowIntersections,
+                                 prog::setShowIntersections));
+        m.add(new TPMenuItemBool("show bounding boxes",
+                                 prog::isShowBoundingBoxes,
+                                 prog::setShowBoundingBoxes));
+        return m;
+    }
+
     private TPMenu makeInfoLinesMenu(TPProgram prog) {
         TPMenu m = new TPMenu("show info lines");
         m.add(new TPMenuItemBool("program info",
                                  prog::getShowProgramInfo,
                                  prog::setShowProgramInfo));
-        m.add(new TPMenuItemBool("debug info",
-                                 prog::getShowDebugInfo,
-                                 prog::setShowDebugInfo));
+        m.add(new TPMenuItemBool("diagnostic info",
+                                 prog::getShowDiagnosticInfo,
+                                 prog::setShowDiagnosticInfo));
         return m;
     }
 
@@ -353,8 +362,8 @@ public class App {
         m.add(new TPMenuItemIncr("goal fps", () -> base.getFpsGoal() + "",
                                  () -> base.setFpsGoal(base.getFpsGoal() - 1),
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
-        m.add(new TPMenuItemSimple("show bounding boxes",
-                                   () -> System.out.println("bounding boxes")));
+        m.add(new TPMenuItemSimple("sound settings",
+                                   () -> System.out.println("sound")));
         return m;
     }
 
@@ -383,6 +392,7 @@ public class App {
             addDroneFunc("line", 1, TPFactory::lineActor);
             addDroneFunc("polygon", 1, TPFactory::regularPolygonActor);
             addDroneFunc("thistle", 1, TPFactory::regularThistleActor);
+            addDroneFunc("segmented polygon", 1, TPFactory::segmentedPolygonActor);
             addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
             addDroneFunc("shooter", 1, TPFactory::shooterActor);
             setDronesGoal(6);
