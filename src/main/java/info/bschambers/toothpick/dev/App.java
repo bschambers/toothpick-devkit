@@ -346,7 +346,7 @@ public class App {
         end = end.add(pos.invert());
         TPForm form = new TPForm(new TPPart[] { new TPLine(new Line(start, end)) });
         TPActor actor = new TPActor(form);
-        actor.addBehaviour(TPFactory.WRAP_AT_BOUNDS);
+        actor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
         actor.setPos(pos);
         return actor;
     }
