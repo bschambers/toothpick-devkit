@@ -86,6 +86,9 @@ public class App {
         m.add(makeProgMenuNumDrones(new MixedDronesGame()));
         m.add(makeProgMenuNumDrones(makeIncrementNumDronesGame()));
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
+        m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
+        m.add(new TPMenuItemSimple("rain",
+                                   () -> System.out.println("rain")));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("powerups game",
@@ -120,15 +123,12 @@ public class App {
                     }
                     prog.revivePlayer(true);
         }));
-        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
+        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.reset()));
         m.add(new TPMenuItemBool("pause when menu active ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
         m.add(new TPMenuItemSimple(() -> "step forward by " + stopAfterVal + " frames",
-                                   () -> {
-                                       prog.setPauseForMenu(true);
-                                       prog.setStopAfter(stopAfterVal);
-        }));
+                                   () -> prog.setPauseAfter(stopAfterVal)));
         m.add(new TPMenuItemIncr("set step-forward amount", () -> "" + stopAfterVal,
                                  () -> stopAfterVal--,
                                  () -> stopAfterVal++));
@@ -149,6 +149,26 @@ public class App {
         return m;
     }
 
+    private TPMenu makeProgMenuNumDrones(NumDronesProgram prog) {
+        TPMenu m = makeProgMenu(prog);
+        m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
+                                 () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
+                                 () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
+        m.add(makeDroneChooserMenu(prog));
+        return m;
+    }
+
+    private TPMenu makeSequencePlatformMenu(TPSequencePlatform platform) {
+        TPMenu m = new TPMenu(platform.getTitle());
+        m.setInitAction(() -> {
+                System.out.println("sequence-platform-menu --> init-action");
+                base.setPlatform(platform);
+                platform.getProgram().updateActorsInPlace();
+            });
+        m.add(new TPMenuItemSimple("RUN", () -> base.hideMenu()));
+        return m;
+    }
+
     private TPMenu makeBGColorMenu(TPProgram prog) {
         TPMenu m = new TPMenu(() -> "Set BG Color (current: " + rgbStr(prog.getBGColor()) + ")");
         m.add(new TPMenuItemSimple("black", () -> prog.setBGColor(Color.BLACK)));
@@ -156,15 +176,6 @@ public class App {
         m.add(new TPMenuItemSimple("blue", () -> prog.setBGColor(Color.BLUE)));
         m.add(new TPMenuItemSimple("grey", () -> prog.setBGColor(Color.GRAY)));
         m.add(new TPMenuItemSimple("random", () -> prog.setBGColor(ColorGetter.randColor())));
-        return m;
-    }
-
-    private TPMenu makeProgMenuNumDrones(NumDronesProgram prog) {
-        TPMenu m = makeProgMenu(prog);
-        m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
-                                 () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
-                                 () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
-        m.add(makeDroneChooserMenu(prog));
         return m;
     }
 
@@ -315,8 +326,8 @@ public class App {
     private TPProgram makeProgStaticToothpick() {
         TPProgram tpp = new TPProgram("Static Toothpicks") {
                 @Override
-                public void init() {
-                    super.init();
+                public void reset() {
+                    super.reset();
                     // drones
                     addActor(makeLineActor(45, 20, 200, 30));
                     addActor(makeLineActor(200, 350, 400, 250));
@@ -328,7 +339,7 @@ public class App {
             };
         tpp.setShowIntersections(true);
         tpp.addBehaviour(new ToothpickPhysics());
-        tpp.init();
+        tpp.reset();
         return tpp;
     }
 
@@ -375,13 +386,13 @@ public class App {
             TPPlayer p = playerPresetLine(this);
             p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
             setPlayer(p);
-            initPlayer();
+            resetPlayer();
             setBGColor(ColorGetter.randColor());
         }
 
         @Override
-        public void init() {
-            super.init();
+        public void reset() {
+            super.reset();
             setBGColor(ColorGetter.randColor());
         }
     }
@@ -412,6 +423,27 @@ public class App {
         NumDronesProgram prog = new MixedDronesGame();
         prog.setTitle("Scrolling Game");
         prog.addBehaviour(new ScrollWithPlayer());
+        return prog;
+    }
+
+    private TPSequencePlatform makeSequenceGameAttackWaves() {
+        TPSequencePlatform platform = new TPSequencePlatform("Sequence Game: Attack Waves");
+        platform.addProgram(makeAttackWaveLevel("lines", TPFactory::lineActor));
+        platform.addProgram(makeAttackWaveLevel("zig-zag", TPFactory::zigzagActor));
+        platform.addProgram(makeAttackWaveLevel("thistle", TPFactory::regularThistleActor));
+        platform.addProgram(makeAttackWaveLevel("polygon", TPFactory::regularPolygonActor));
+        platform.addProgram(makeAttackWaveLevel("shooter", TPFactory::shooterActor));
+        platform.addProgram(makeAttackWaveLevel("segmented-polygon", TPFactory::segmentedPolygonActor));
+        platform.setPlayer(TPFactory.playerLine(new Pt(300, 300)));
+        return platform;
+    }
+
+    private TPProgram makeAttackWaveLevel(String title,
+                                          Function<TPProgram, TPActor> droneFunc) {
+        NumDronesProgram prog = new NumDronesProgram(title + " wave");
+        prog.addDroneFunc(title, 1, droneFunc);
+        prog.addBehaviour(new FinishAfterNumKills());
+        prog.setBGColor(Color.BLACK);
         return prog;
     }
 
