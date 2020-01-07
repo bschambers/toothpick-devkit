@@ -87,13 +87,14 @@ public class App {
         m.add(makeProgMenuNumDrones(makeIncrementNumDronesGame()));
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
         m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
+        m.add(makeProgMenu(makeProgTextAndImages()));
         m.add(new TPMenuItemSimple("rain",
                                    () -> System.out.println("rain")));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("powerups game",
                                    () -> System.out.println("powerups")));
-        m.add(new TPMenuItemSimple("levels game",
+        m.add(new TPMenuItemSimple("levels game (loaded from disk)",
                                    () -> System.out.println("levels")));
         m.add(new TPMenuItemSimple("asteroids game",
                                    () -> System.out.println("asteroid")));
@@ -310,10 +311,16 @@ public class App {
     }
 
     private void addSlide(Slideshow slides, String filename) {
+        Image img = loadImageFromFile(filename);
+        if (img != null)
+            slides.addImage(img);
+    }
+
+    private Image loadImageFromFile(String filename) {
         try {
             URL url = ClassLoader.getSystemClassLoader().getResource(filename);
             Image img = ImageIO.read(url);
-            slides.addImage(img);
+            return img;
         } catch (IOException e) {
             System.out.println("ERROR - COULDN'T LOAD IMAGE: " + filename);
             e.printStackTrace();
@@ -321,6 +328,7 @@ public class App {
             System.out.println("ERROR - COULDN'T LOAD IMAGE: " + filename);
             e.printStackTrace();
         }
+        return null;
     }
 
     private TPProgram makeProgStaticToothpick() {
@@ -339,6 +347,43 @@ public class App {
             };
         tpp.setShowIntersections(true);
         tpp.addBehaviour(new ToothpickPhysics());
+        tpp.reset();
+        return tpp;
+    }
+
+    private TPProgram makeProgTextAndImages() {
+        TPProgram tpp = new TPProgram("Text and Images") {
+                @Override
+                public void reset() {
+                    super.reset();
+                    Image img = loadImageFromFile("little_thingy.png");
+                    for (int n = 0; n < 5; n++) {
+
+                        // text drones
+                        TPActor a = new TPActor();
+                        a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
+                        a.setPos(TPFactory.randBoundaryPos(this));
+                        TPFactory.setRandHeading(a);
+                        TPForm form = new TPForm();
+                        form.addPart(new TPText("Blah, Blah, Blah..."));
+                        a.setForm(form);
+                        addActor(a);
+
+                        // image drones
+                        if (img != null) {
+                            a = new TPActor();
+                            a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
+                            a.setPos(TPFactory.randBoundaryPos(this));
+                            TPFactory.setRandHeading(a);
+                            form = new TPForm();
+                            form.addPart(new TPImage(img));
+                            a.setForm(form);
+                            addActor(a);
+                        }
+
+                    }
+                }
+            };
         tpp.reset();
         return tpp;
     }
