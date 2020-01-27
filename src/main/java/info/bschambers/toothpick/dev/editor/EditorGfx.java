@@ -25,7 +25,7 @@ public final class EditorGfx {
         Gfx.arc(g, rx, ry, len, startAngle, arcAngle);
         // inertia vector
         g.setColor(Color.GRAY);
-        Gfx.line(g, geom, ae.getPosX(), ae.getPosY(),
+        Gfx.line(g, geom, Gfx.STROKE_1, ae.getPosX(), ae.getPosY(),
                  ae.getInertiaPosX(), ae.getInertiaPosY());
         // position control handle
         g.setColor(Color.GREEN);

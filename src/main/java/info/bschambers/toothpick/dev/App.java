@@ -100,6 +100,8 @@ public class App {
                                    () -> System.out.println("asteroid")));
         m.add(new TPMenuItemSimple("gravity orbit game",
                                    () -> System.out.println("orbit")));
+        m.add(new TPMenuItemSimple("two player duel",
+                                   () -> System.out.println("two player duel")));
         return m;
     }
 
@@ -167,6 +169,10 @@ public class App {
                 platform.getProgram().updateActorsInPlace();
             });
         m.add(new TPMenuItemSimple("RUN", () -> base.hideMenu()));
+        // m.add(makeSequenceStagesMenu(platform));
+        m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
+                                          "DEACTIVATE EDITOR" : "activate editor"),
+                                   () -> window.setEditorMode(!window.isEditorMode())));
         return m;
     }
 
@@ -451,6 +457,9 @@ public class App {
             addDroneFunc("segmented polygon", 1, TPFactory::segmentedPolygonActor);
             addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
             addDroneFunc("shooter", 1, TPFactory::shooterActor);
+            addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
+            addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
+            addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
             setDronesGoal(6);
             setBGColor(Color.BLACK);
         }
@@ -473,21 +482,28 @@ public class App {
 
     private TPSequencePlatform makeSequenceGameAttackWaves() {
         TPSequencePlatform platform = new TPSequencePlatform("Sequence Game: Attack Waves");
-        platform.addProgram(makeAttackWaveLevel("lines", TPFactory::lineActor));
-        platform.addProgram(makeAttackWaveLevel("zig-zag", TPFactory::zigzagActor));
-        platform.addProgram(makeAttackWaveLevel("thistle", TPFactory::regularThistleActor));
-        platform.addProgram(makeAttackWaveLevel("polygon", TPFactory::regularPolygonActor));
-        platform.addProgram(makeAttackWaveLevel("shooter", TPFactory::shooterActor));
-        platform.addProgram(makeAttackWaveLevel("segmented-polygon", TPFactory::segmentedPolygonActor));
+        platform.addProgram(makeAttackWaveLevel("key-part thistle", 4,
+                                                TPFactory::regularThistleActorWithKeyPart));
+        platform.addProgram(makeAttackWaveLevel("key-part polygon", 4,
+                                                TPFactory::regularPolygonActorWithKeyPart));
+        platform.addProgram(makeAttackWaveLevel("key-part zig-zag", 6,
+                                                TPFactory::zigzagActorWithKeyPart));
+        platform.addProgram(makeAttackWaveLevel("lines", 4, TPFactory::lineActor));
+        platform.addProgram(makeAttackWaveLevel("zig-zag", 10, TPFactory::zigzagActor));
+        platform.addProgram(makeAttackWaveLevel("thistle", 20, TPFactory::regularThistleActor));
+        platform.addProgram(makeAttackWaveLevel("polygon", 8, TPFactory::regularPolygonActor));
+        platform.addProgram(makeAttackWaveLevel("shooter", 5, TPFactory::shooterActor));
+        platform.addProgram(makeAttackWaveLevel("segmented-polygon", 6,
+                                                TPFactory::segmentedPolygonActor));
         platform.setPlayer(TPFactory.playerLine(new Pt(300, 300)));
         return platform;
     }
 
-    private TPProgram makeAttackWaveLevel(String title,
+    private TPProgram makeAttackWaveLevel(String title, int killsTarget,
                                           Function<TPProgram, TPActor> droneFunc) {
         NumDronesProgram prog = new NumDronesProgram(title + " wave");
         prog.addDroneFunc(title, 1, droneFunc);
-        prog.addBehaviour(new FinishAfterNumKills());
+        prog.addBehaviour(new FinishAfterNumKills(killsTarget));
         prog.setBGColor(Color.BLACK);
         return prog;
     }
