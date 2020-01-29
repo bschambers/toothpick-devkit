@@ -35,9 +35,19 @@ public class TPEditor extends TPSwingUI {
     private boolean showCursor = true;
     // keyboard
     private boolean shiftDown = false;
+    // popup windows
+    private HubPopup hubWindow;
+    private ProgramPopup progWindow;
+    private ActorPopup actorWindow;
 
     public TPEditor() {
         super("Toothpick Editor");
+        hubWindow = new HubPopup();
+        progWindow = new ProgramPopup();
+        actorWindow = new ActorPopup(this);
+        hubWindow.setBounds(5, 5, 250, 200);
+        progWindow.setBounds(5, 210, 250, 300);
+        actorWindow.setBounds(5, 515, 250, 300);
     }
 
     private TPGeometry getGeom() {
@@ -55,7 +65,7 @@ public class TPEditor extends TPSwingUI {
             endEditorSession();
     }
 
-    public void startEditorSession() {
+    private void startEditorSession() {
         if (!editorMode) {
             editorMode = true;
             // clear any existing ActorEditors
@@ -64,18 +74,37 @@ public class TPEditor extends TPSwingUI {
             // create an ActorEditor wrapper for each TPActor
             for (int i = 0; i < getProgram().numActors(); i++)
                 addAE(new ActorEditor(getProgram().getActor(i)));
+            // show popup editor windows
+            hubWindow.setVisible(true);
+            progWindow.setVisible(true);
+            actorWindow.setVisible(true);
         }
     }
 
     /**
      * Clean up and dispose of editor resources.
      */
-    public void endEditorSession() {
+    private void endEditorSession() {
         if (editorMode) {
             editorMode = false;
             for (ActorEditor ae : actEds)
                 removeAE(ae);
+            // hide popup editor windows
+            hubWindow.setVisible(false);
+            progWindow.setVisible(false);
+            actorWindow.setVisible(false);
         }
+    }
+
+    public List<ActorEditor> getActorEditors() {
+        return actEds;
+    }
+
+    /**
+     * <p>NOTE: may be {@code null}.</p>
+     */
+    public ActorEditor getCurrentActorEditor() {
+        return selectedAE;
     }
 
     @Override
@@ -111,6 +140,7 @@ public class TPEditor extends TPSwingUI {
             int midX = getWidth() / 2;
             g.drawString("Editor Mode: " + mode, midX, 30);
             g.drawString("point : " + currentP.x + ", " + currentP.y, midX, 45);
+            g.drawString("shift-left-click and drag to change angle-inertia", midX, 75);
         }
     }
 
@@ -175,6 +205,19 @@ public class TPEditor extends TPSwingUI {
                 break Choosing;
             }
         }
+
+        actorWindow.update();
+    }
+
+    private ActorEditor getAEAtPoint(Point p) {
+        p = new Point(p.x, p.y - getInsets().top);
+        for (ActorEditor ae : actEds) {
+            if (ae.getPositionHandle(getGeom()).contains(p) ||
+                ae.getInertiaHandle(getGeom()).contains(p)) {
+                return ae;
+            }
+        }
+        return null;
     }
 
     private void clearSelection() {
@@ -198,6 +241,8 @@ public class TPEditor extends TPSwingUI {
                 }
             }
         }
+
+        actorWindow.update();
     }
 
     /*------------------------- Keyboard Input -------------------------*/
@@ -227,9 +272,18 @@ public class TPEditor extends TPSwingUI {
     }
 
     @Override
+    public void mouseClicked(MouseEvent e) {
+        super.mouseClicked(e);
+        if (editorMode && e.getButton() == MouseEvent.BUTTON3) {
+            System.out.println("right-clicked");
+        }
+    }
+
+    @Override
     public void mousePressed(MouseEvent e) {
         super.mousePressed(e);
-        if (editorMode) {
+        // left button
+        if (editorMode && e.getButton() == MouseEvent.BUTTON1) {
             setPoint(startP, e);
             setPoint(currentP, e);
             setPoint(prevP, e);
