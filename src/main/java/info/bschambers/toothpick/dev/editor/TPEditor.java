@@ -47,7 +47,7 @@ public class TPEditor extends TPSwingUI {
         actorWindow = new ActorPopup(this);
         hubWindow.setBounds(5, 5, 250, 200);
         progWindow.setBounds(5, 210, 250, 300);
-        actorWindow.setBounds(5, 515, 250, 300);
+        actorWindow.setBounds(5, 515, 250, 400);
     }
 
     private TPGeometry getGeom() {
@@ -105,6 +105,17 @@ public class TPEditor extends TPSwingUI {
      */
     public ActorEditor getCurrentActorEditor() {
         return selectedAE;
+    }
+
+    /**
+     * @return A list of all currently selected {@code ActorEditor}s.
+     */
+    public List<ActorEditor> getSelectedActorEditors() {
+        List<ActorEditor> selected = new ArrayList<>();
+        for (ActorEditor ae : actEds)
+            if (ae.isSelected())
+                selected.add(ae);
+        return selected;
     }
 
     @Override
@@ -165,11 +176,11 @@ public class TPEditor extends TPSwingUI {
             ae.update();
     }
 
-    private void addAE(ActorEditor ae) {
+    public void addAE(ActorEditor ae) {
         toAdd.add(ae);
     }
 
-    private void removeAE(ActorEditor ae) {
+    public void removeAE(ActorEditor ae) {
         toRemove.add(ae);
     }
 

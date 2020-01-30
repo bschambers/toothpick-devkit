@@ -1,8 +1,12 @@
 package info.bschambers.toothpick.dev.editor;
 
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.BoxLayout;
 import javax.swing.border.TitledBorder;
 
 public class TPEditorPopup extends JFrame {
@@ -28,6 +32,15 @@ public class TPEditorPopup extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new TitledBorder(title));
         return panel;
+    }
+
+    protected JButton makeButton(String label, Runnable action) {
+        return new JButton(new AbstractAction(label) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    action.run();
+                }
+            });
     }
 
 }

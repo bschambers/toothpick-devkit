@@ -1,12 +1,9 @@
 package info.bschambers.toothpick.dev.editor;
 
 import info.bschambers.toothpick.actor.TPActor;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,6 +20,9 @@ public class ActorPopup extends TPEditorPopup {
     private LabelledTextField currentYInertiaField = new LabelledTextField("y-inertia: ...");
     private LabelledTextField currentAngleInertiaField = new LabelledTextField("angle-inertia: ...");
     private JButton currentUpdateButton;
+    private LabelledTextField dupXOffsetField = new LabelledTextField("duplicate x-offset: ...");
+    private LabelledTextField dupYOffsetField = new LabelledTextField("duplicate y-offset: ...");
+    private JButton currentDuplicateButton;
 
     public ActorPopup(TPEditor editor) {
         super("actors");
@@ -43,23 +43,21 @@ public class ActorPopup extends TPEditorPopup {
         currentPan.add(currentXInertiaField);
         currentPan.add(currentYInertiaField);
         currentPan.add(currentAngleInertiaField);
-        currentUpdateButton = new JButton(new AbstractAction("update") {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    updateCurrent();
-                }
-            });
+        currentUpdateButton = makeButton("update", () -> updateCurrent());
         currentPan.add(currentUpdateButton);
         panel.add(currentPan);
+
+        JPanel duplicatePan = makeVerticalPanel("duplicate current");
+        duplicatePan.add(dupXOffsetField);
+        duplicatePan.add(dupYOffsetField);
+        currentDuplicateButton = makeButton("duplicate", () -> duplicateCurrent());
+        duplicatePan.add(currentDuplicateButton);
+        panel.add(duplicatePan);
+
     }
 
     public void update() {
-        List<ActorEditor> actEds = new ArrayList<>();
-
-        for (ActorEditor ae : editor.getActorEditors())
-            if (ae.isSelected())
-                actEds.add(ae);
-
+        List<ActorEditor> actEds = editor.getSelectedActorEditors();
         infoLabel.setText(actEds.size() + " actors selected");
         currentNameField.setText(collectiveStringVal(actEds, (ActorEditor ae) -> ae.getActor().name));
         currentXField.setText(collectiveStringVal(actEds, (ActorEditor ae) -> ae.getActor().x + ""));
@@ -117,6 +115,7 @@ public class ActorPopup extends TPEditorPopup {
                     actor.yInertia = yInertia;
                 if (angleInertia != null)
                     actor.angleInertia = angleInertia;
+                actor.updateForm();
             }
         }
     }
@@ -129,6 +128,37 @@ public class ActorPopup extends TPEditorPopup {
             return Double.parseDouble(text);
         } catch (NumberFormatException e) {}
         return null;
+    }
+
+    private double parseDouble(String text, double defaultVal) {
+        Double val = parseDoubleOrNull(text);
+        if (val == null)
+            return defaultVal;
+        else
+            return val;
+    }
+
+    /**
+     * <p>Duplicate currently selected actors.</p>
+     */
+    private void duplicateCurrent() {
+        double xOffset = parseDouble(dupXOffsetField.getText(), 50);
+        double yOffset = parseDouble(dupYOffsetField.getText(), 50);
+        List<ActorEditor> selected = editor.getSelectedActorEditors();
+        List<ActorEditor> duplicates = new ArrayList<>();
+        for (ActorEditor ae : selected) {
+            ae.setSelected(false);
+            TPActor actor = ae.getActor().copy();
+            actor.x += xOffset;
+            actor.y += yOffset;
+            ActorEditor duplicateAE = new ActorEditor(actor);
+            duplicateAE.setSelected(true);
+            duplicates.add(duplicateAE);
+            editor.getProgram().addActor(actor);
+        }
+        for (ActorEditor ae : duplicates)
+            editor.addAE(ae);
+        editor.getProgram().updateActorsInPlace();
     }
 
 }
