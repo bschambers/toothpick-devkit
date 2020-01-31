@@ -12,17 +12,18 @@ public class ActorPopup extends TPEditorPopup {
 
     private TPEditor editor;
     private JLabel infoLabel = new JLabel("0 actors selected");
-    private LabelledTextField currentNameField = new LabelledTextField("name: ...");
-    private LabelledTextField currentXField = new LabelledTextField("x: ...");
-    private LabelledTextField currentYField = new LabelledTextField("y: ...");
-    private LabelledTextField currentAngleField = new LabelledTextField("angle: ...");
-    private LabelledTextField currentXInertiaField = new LabelledTextField("x-inertia: ...");
-    private LabelledTextField currentYInertiaField = new LabelledTextField("y-inertia: ...");
-    private LabelledTextField currentAngleInertiaField = new LabelledTextField("angle-inertia: ...");
+    private LabelledTextField currentNameField = new LabelledTextField("name");
+    private LabelledTextField currentXField = new LabelledTextField("x");
+    private LabelledTextField currentYField = new LabelledTextField("y");
+    private LabelledTextField currentAngleField = new LabelledTextField("angle");
+    private LabelledTextField currentXInertiaField = new LabelledTextField("x-inertia");
+    private LabelledTextField currentYInertiaField = new LabelledTextField("y-inertia");
+    private LabelledTextField currentAngleInertiaField = new LabelledTextField("angle-inertia");
     private JButton currentUpdateButton;
-    private LabelledTextField dupXOffsetField = new LabelledTextField("duplicate x-offset: ...");
-    private LabelledTextField dupYOffsetField = new LabelledTextField("duplicate y-offset: ...");
-    private JButton currentDuplicateButton;
+    private LabelledTextField dupXOffsetField = new LabelledTextField("duplicate x-offset");
+    private LabelledTextField dupYOffsetField = new LabelledTextField("duplicate y-offset");
+    private JButton duplicateButton;
+    private JButton editFormButton;
 
     public ActorPopup(TPEditor editor) {
         super("actors");
@@ -50,9 +51,14 @@ public class ActorPopup extends TPEditorPopup {
         JPanel duplicatePan = makeVerticalPanel("duplicate current");
         duplicatePan.add(dupXOffsetField);
         duplicatePan.add(dupYOffsetField);
-        currentDuplicateButton = makeButton("duplicate", () -> duplicateCurrent());
-        duplicatePan.add(currentDuplicateButton);
+        duplicateButton = makeButton("duplicate", () -> duplicateCurrent());
+        duplicatePan.add(duplicateButton);
         panel.add(duplicatePan);
+
+        JPanel editPan = makeVerticalPanel("edit form");
+        editFormButton = makeButton("edit form", () -> editCurrentForms());
+        editPan.add(editFormButton);
+        panel.add(editPan);
 
     }
 
@@ -159,6 +165,23 @@ public class ActorPopup extends TPEditorPopup {
         for (ActorEditor ae : duplicates)
             editor.addAE(ae);
         editor.getProgram().updateActorsInPlace();
+    }
+
+    /**
+     * <p>Opens a {@link FormEditorWindow} for each of the currently selected actors.</p>
+     */
+    private void editCurrentForms() {
+        System.out.println("EDIT FORMS");
+        int x = 100;
+        int y = 100;
+        for (ActorEditor ae : editor.getSelectedActorEditors()) {
+            FormEditorWindow formEditor = new FormEditorWindow(editor, ae.getActor());
+            formEditor.setBounds(x, y, 500, 600);
+            formEditor.recenterGrid();
+            formEditor.setVisible(true);
+            x += 50;
+            y += 50;
+        }
     }
 
 }

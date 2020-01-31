@@ -13,7 +13,7 @@ public class TPEditorPopup extends JFrame {
 
     public TPEditorPopup(String title) {
         super(title);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         setResizable(true);
     }
 
