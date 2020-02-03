@@ -17,43 +17,47 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class FormEditorWindow extends JFrame
     implements KeyListener, MouseListener, MouseMotionListener, ComponentListener {
 
-    private enum Mode { DRAW, POINTS, LINES };
-    private Mode mode = Mode.DRAW;
+    private enum Mode { PARTS, VERTICES, DRAW };
+    private Mode mode = Mode.PARTS;
 
     private TPEditor editor;
-    private TPActor actor;
+    private ActorEditor actorEd;
     private FormEditorPanel panel = new FormEditorPanel();
     private TPGeometry geometry = new TPGeometry();
     private boolean snapToGrid = true;
 
+    private boolean selectionActive = false;
+    private boolean mouseLeftDown = false;
     private Point mark = new Point(0, 0);
     private Point point = new Point(0, 0);
-    private boolean mouseLeftDown = false;
+    private List<EditorHandle> handles = new ArrayList<>();
 
-    public FormEditorWindow(TPEditor editor, TPActor actor) {
-        super("Editing Form: " + actor.name);
+    public FormEditorWindow(TPEditor editor, ActorEditor actorEd) {
+        super("Editing Form: " + actorEd.getActor().name);
         this.editor = editor;
-        this.actor = actor;
+        this.actorEd = actorEd;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(true);
-
         panel.setBackground(Color.BLACK);
         setContentPane(panel);
-
         addKeyListener(this);
-        addMouseListener(this);
-        addMouseMotionListener(this);
         addComponentListener(this);
+        // mouse listeners added to panel so that MouseEvent co-ordinates will be correct
+        panel.addMouseListener(this);
+        panel.addMouseMotionListener(this);
+        switchToPartsMode();
     }
 
     private TPForm getForm() {
-        return actor.getForm();
+        return actorEd.getActor().getForm();
     }
 
     /**
@@ -64,7 +68,6 @@ public class FormEditorWindow extends JFrame
     }
 
     private class FormEditorPanel extends JPanel {
-
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -91,49 +94,68 @@ public class FormEditorWindow extends JFrame
      * <p>Paints control-handles etc.</p>
      */
     private void paintOverlay(Graphics g) {
-
+        // line-drawing in progress
         if ( mode == Mode.DRAW) {
             if (mouseLeftDown) {
                 g.setColor(Color.CYAN);
                 g.drawLine(mark.x, mark.y, point.x, point.y);
             }
-        } else if (mode == Mode.POINTS) {
-            g.setColor(Color.MAGENTA);
-            paintPoints(g);
-        } else if (mode == Mode.LINES) {
-            g.setColor(Color.YELLOW);
-            paintLines(g);
         }
-
+        // editor handles
+        for (EditorHandle eh : handles) {
+            if (eh.isSelected())
+                g.setColor(Color.RED);
+            else
+                g.setColor(eh.getColor());
+            Gfx.rectangle(g, eh.getHandle(geometry));
+        }
+        // info text
         g.setColor(Color.WHITE);
-        g.drawString("MODE: " + mode, 20, 30);
+        g.drawString(makeModeString(), 20, 30);
     }
 
-    private void paintPoints(Graphics g) {
-        for (int p = 0; p < getForm().numParts(); p++) {
-            if (getForm().getPart(p) instanceof TPLine) {
-                Line ln = ((TPLine) getForm().getPart(p)).getArchetype();
-                Pt a = ln.start;
-                Pt b = ln.end;
-                Gfx.centeredSquare(g, (int) geometry.xToScreen(a.x), (int) geometry.yToScreen(a.y), 10);
-                Gfx.centeredSquare(g, (int) geometry.xToScreen(b.x), (int) geometry.yToScreen(b.y), 10);
-            }
-        }
-    }
-
-    private void paintLines(Graphics g) {
-        for (int p = 0; p < getForm().numParts(); p++) {
-            if (getForm().getPart(p) instanceof TPLine) {
-                Line ln = ((TPLine) getForm().getPart(p)).getArchetype();
-                Pt c = ln.center();
-                Gfx.centeredSquare(g, (int) geometry.xToScreen(c.x), (int) geometry.yToScreen(c.y), 10);
-            }
-        }
+    private String makeModeString() {
+        return "MODE: (1) " + (mode == Mode.PARTS ? "PARTS" : "parts")
+            + " | (2) "  + (mode == Mode.VERTICES ? "VERTICES" : "vertices")
+            + " | (3) "  + (mode == Mode.DRAW ? "DRAW" : "draw");
     }
 
     public void recenterGrid() {
         geometry.xOffset = getWidth() / 2;
         geometry.yOffset = getHeight() / 2;
+    }
+
+    private void switchToPartsMode() {
+        mode = Mode.PARTS;
+        selectionActive = false;
+        handles.clear();
+        for (int p = 0; p < getForm().numParts(); p++) {
+            if (getForm().getPart(p) instanceof TPLine) {
+                handles.add(new LineEditor((TPLine) getForm().getPart(p)));
+            }
+        }
+        updateView();
+    }
+
+    private void switchToVerticesMode() {
+        mode = Mode.VERTICES;
+        selectionActive = false;
+        handles.clear();
+        for (int p = 0; p < getForm().numParts(); p++) {
+            if (getForm().getPart(p) instanceof TPLine) {
+                TPLine tpl = (TPLine) getForm().getPart(p);
+                handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.START));
+                handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.END));
+            }
+        }
+        updateView();
+    }
+
+    private void switchToDrawMode() {
+        mode = Mode.DRAW;
+        selectionActive = false;
+        handles.clear();
+        updateView();
     }
 
     /*------------------------- Keyboard Input -------------------------*/
@@ -145,17 +167,18 @@ public class FormEditorWindow extends JFrame
             System.out.println("exit editor window...");
             dispose();
             break;
-        case KeyEvent.VK_D:
-            mode = Mode.DRAW;
+        case KeyEvent.VK_1:
+            if (mode != Mode.PARTS)
+                switchToPartsMode();
+            break;
+        case KeyEvent.VK_2:
+            if (mode != Mode.VERTICES)
+                switchToVerticesMode();
             updateView();
             break;
-        case KeyEvent.VK_L:
-            mode = Mode.LINES;
-            updateView();
-            break;
-        case KeyEvent.VK_P:
-            mode = Mode.POINTS;
-            updateView();
+        case KeyEvent.VK_3:
+            if (mode != Mode.DRAW)
+                switchToDrawMode();
             break;
         }
     }
@@ -175,12 +198,17 @@ public class FormEditorWindow extends JFrame
     public void mousePressed(MouseEvent e) {
         mouseLeftDown = true;
         mark = e.getPoint();
+        point = e.getPoint();
+        if (mode == Mode.PARTS || mode == Mode.VERTICES) {
+            // select any handles under point
+            for (EditorHandle eh : handles)
+                eh.setSelected(eh.getHandle(geometry).contains(point));
+        }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
         mouseLeftDown = false;
-
         if (mode == Mode.DRAW) {
             if (!point.equals(mark)) {
                 // finalize line and add to form
@@ -192,7 +220,7 @@ public class FormEditorWindow extends JFrame
                 System.out.println("new line: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
                 TPLine tpl = new TPLine(ln);
                 getForm().addPart(tpl);
-                actor.updateForm();
+                actorEd.getActor().updateForm();
                 updateView();
             }
         }
@@ -210,6 +238,20 @@ public class FormEditorWindow extends JFrame
     @Override
     public void mouseDragged(MouseEvent e) {
         point = e.getPoint();
+        if (mode == Mode.PARTS || mode == Mode.VERTICES) {
+            // move any selected handles
+            boolean modified = false;
+            for (EditorHandle eh : handles)
+                if (eh.isSelected()) {
+                    // eh.setPosition(point.x, point.y);
+                    eh.setPosition((int) geometry.xFromScreen(point.x),
+                                   (int) geometry.yFromScreen(point.y));
+                    eh.update();
+                    modified = true;
+                }
+            if (modified)
+                actorEd.getActor().updateForm();
+        }
         updateView();
     }
 

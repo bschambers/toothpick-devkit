@@ -175,7 +175,7 @@ public class ActorPopup extends TPEditorPopup {
         int x = 100;
         int y = 100;
         for (ActorEditor ae : editor.getSelectedActorEditors()) {
-            FormEditorWindow formEditor = new FormEditorWindow(editor, ae.getActor());
+            FormEditorWindow formEditor = new FormEditorWindow(editor, ae);
             formEditor.setBounds(x, y, 500, 600);
             formEditor.recenterGrid();
             formEditor.setVisible(true);

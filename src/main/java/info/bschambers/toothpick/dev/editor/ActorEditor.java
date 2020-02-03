@@ -4,6 +4,9 @@ import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.actor.TPActor;
 import java.awt.Rectangle;
 
+/**
+ * <p>Facilitates interactive GUI-based editing for {@code TPActor}.</p>
+ */
 public class ActorEditor {
 
     private TPActor actor;
@@ -48,7 +51,6 @@ public class ActorEditor {
         int x = xCenter - (size / 2);
         int y = yCenter - (size / 2);
         return new Rectangle(x, y, size, size);
-
     }
 
     public int getInertiaScale() {
