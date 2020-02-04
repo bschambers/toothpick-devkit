@@ -25,7 +25,7 @@ import javax.swing.JPanel;
 public class FormEditorWindow extends JFrame
     implements KeyListener, MouseListener, MouseMotionListener, ComponentListener {
 
-    private enum Mode { PARTS, VERTICES, DRAW };
+    private enum Mode { PARTS, VERTICES, DRAW, CENTER };
     private Mode mode = Mode.PARTS;
 
     private TPEditor editor;
@@ -79,8 +79,12 @@ public class FormEditorWindow extends JFrame
 
     private void paintGrid(Graphics g) {
         g.setColor(Color.BLUE);
-        int x = (int) geometry.xOffset;
-        int y = (int) geometry.yOffset;
+        int x = (int) geometry.xToScreen(geometry.getXCenter());
+        int y = (int) geometry.yToScreen(geometry.getYCenter());
+        paintCenterCross(g, x, y);
+    }
+
+    private void paintCenterCross(Graphics g, int x, int y) {
         g.drawLine(0, y, getWidth(), y);
         g.drawLine(x, 0, x, getHeight());
     }
@@ -95,10 +99,17 @@ public class FormEditorWindow extends JFrame
      */
     private void paintOverlay(Graphics g) {
         // line-drawing in progress
-        if ( mode == Mode.DRAW) {
+        if (mode == Mode.DRAW) {
             if (mouseLeftDown) {
                 g.setColor(Color.CYAN);
                 g.drawLine(mark.x, mark.y, point.x, point.y);
+            }
+        }
+        // center
+        if (mode == Mode.CENTER) {
+            if (mouseLeftDown) {
+                g.setColor(Color.GRAY);
+                paintCenterCross(g, point.x, point.y);
             }
         }
         // editor handles
@@ -109,18 +120,26 @@ public class FormEditorWindow extends JFrame
                 g.setColor(eh.getColor());
             Gfx.rectangle(g, eh.getHandle(geometry));
         }
+        // point
+        g.setColor(Color.GRAY);
+        Gfx.crosshairs(g, point.x, point.y, 20);
         // info text
         g.setColor(Color.WHITE);
         g.drawString(makeModeString(), 20, 30);
+        g.drawString("screen-point: x=" + point.x + " y=" + point.y , 20, 45);
+        g.drawString("geom-point: x=" + geometry.xFromScreen(point.x)
+                     + " y=" + geometry.yFromScreen(point.y) , 20, 60);
     }
 
     private String makeModeString() {
         return "MODE: (1) " + (mode == Mode.PARTS ? "PARTS" : "parts")
-            + " | (2) "  + (mode == Mode.VERTICES ? "VERTICES" : "vertices")
-            + " | (3) "  + (mode == Mode.DRAW ? "DRAW" : "draw");
+                + " | (2) " + (mode == Mode.VERTICES ? "VERTICES" : "vertices")
+                + " | (3) " + (mode == Mode.DRAW ? "DRAW" : "draw")
+                + " | (4) " + (mode == Mode.CENTER ? "CENTER" : "center");
     }
 
     public void recenterGrid() {
+        geometry.setupAndCenter(panel.getWidth(), panel.getHeight());
         geometry.xOffset = getWidth() / 2;
         geometry.yOffset = getHeight() / 2;
     }
@@ -158,6 +177,13 @@ public class FormEditorWindow extends JFrame
         updateView();
     }
 
+    private void switchToCenterMode() {
+        mode = Mode.CENTER;
+        selectionActive = false;
+        handles.clear();
+        updateView();
+    }
+
     /*------------------------- Keyboard Input -------------------------*/
 
     @Override
@@ -179,6 +205,10 @@ public class FormEditorWindow extends JFrame
         case KeyEvent.VK_3:
             if (mode != Mode.DRAW)
                 switchToDrawMode();
+            break;
+        case KeyEvent.VK_4:
+            if (mode != Mode.CENTER)
+                switchToCenterMode();
             break;
         }
     }
@@ -204,6 +234,7 @@ public class FormEditorWindow extends JFrame
             for (EditorHandle eh : handles)
                 eh.setSelected(eh.getHandle(geometry).contains(point));
         }
+        updateView();
     }
 
     @Override
@@ -223,6 +254,20 @@ public class FormEditorWindow extends JFrame
                 actorEd.getActor().updateForm();
                 updateView();
             }
+        } else if (mode == Mode.CENTER) {
+            // set new center point for form
+            double xx = geometry.xFromScreen(point.x);
+            double yy = geometry.yFromScreen(point.y);
+            geometry.xOffset += xx;
+            geometry.yOffset += yy;
+            for (int p = 0; p < getForm().numParts(); p++) {
+                if (getForm().getPart(p) instanceof TPLine) {
+                    TPLine tpl = (TPLine) getForm().getPart(p);
+                    tpl.setArchetype(tpl.getArchetype().shift(-xx, -yy));
+                }
+            }
+            actorEd.getActor().updateForm();
+            updateView();
         }
     }
 
