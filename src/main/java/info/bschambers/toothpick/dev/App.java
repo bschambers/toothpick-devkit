@@ -88,12 +88,11 @@ public class App {
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
         m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
         m.add(makeProgMenu(makeProgTextAndImages()));
+        m.add(makeProgMenuNumDrones(makePowerupsGame()));
         m.add(new TPMenuItemSimple("rain",
                                    () -> System.out.println("rain")));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
-        m.add(new TPMenuItemSimple("powerups game",
-                                   () -> System.out.println("powerups")));
         m.add(new TPMenuItemSimple("levels game (loaded from disk)",
                                    () -> System.out.println("levels")));
         m.add(new TPMenuItemSimple("asteroids game",
@@ -477,6 +476,20 @@ public class App {
         NumDronesProgram prog = new MixedDronesGame();
         prog.setTitle("Scrolling Game");
         prog.addBehaviour(new ScrollWithPlayer());
+        return prog;
+    }
+
+    private NumDronesProgram makePowerupsGame() {
+        NumDronesProgram prog = new NumDronesProgram("Powerups Game");
+        prog.addDroneFunc("line", 1, TPFactory::lineActor);
+        prog.addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
+        prog.addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
+        // prog.addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
+        prog.addDroneFunc("shooter", 1, TPFactory::shooterActor);
+        prog.addDroneFunc("powerup: shooting", 1, TPFactory::powerupActorShooting);
+        prog.addDroneFunc("powerup: sticky", 1, TPFactory::powerupActorSticky);
+        prog.addDroneFunc("powerup: strong", 1, TPFactory::powerupActorStrong);
+        prog.setDronesGoal(6);
         return prog;
     }
 
