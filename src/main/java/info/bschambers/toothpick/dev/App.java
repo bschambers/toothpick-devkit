@@ -26,7 +26,6 @@ public class App {
     private TPEditor window;
     private TPBase base;
     private TPProgram introSlides;
-    private TPSound sound;
     private int stopAfterVal = 5;
     private TPProgram loadedProg = new TPProgram("NULL PROGRAM");
     private String saveDir = "data/saved-games";
@@ -34,12 +33,11 @@ public class App {
     public App() {
         window = new TPEditor();
         base = new TPBase();
-        sound = makeSoundModule();
         introSlides = makeIntroSlidesProg();
         base.setProgram(introSlides);
         base.setUI(window);
         base.setMenu(makeMenu());
-        base.setSound(sound);
+        base.setSound(makeSampledSoundModule());
     }
 
     public void run() {
@@ -47,7 +45,7 @@ public class App {
         base.run();
     }
 
-    private TPSound makeSoundModule() {
+    private TPSound makeSampledSoundModule() {
         TPSampledSound sampled = new TPSampledSound();
         addSfxFile(sampled, "sfx/cymbals/cymbal01.wav");
         addSfxFile(sampled, "sfx/cymbals/cymbal02.wav");
@@ -64,7 +62,7 @@ public class App {
         System.out.println("try to add sound file: " + filename);
         URL url = ClassLoader.getSystemClassLoader().getResource(filename);
         System.out.println("... got url: " + url);
-        sampled.addSoundFile(new File(url.getPath()));
+        sampled.addSfx(new File(url.getPath()));
     }
 
     private TPMenu makeMenu() {
@@ -423,8 +421,16 @@ public class App {
         m.add(new TPMenuItemIncr("goal fps", () -> base.getFpsGoal() + "",
                                  () -> base.setFpsGoal(base.getFpsGoal() - 1),
                                  () -> base.setFpsGoal(base.getFpsGoal() + 1)));
-        m.add(new TPMenuItemSimple("sound settings",
-                                   () -> System.out.println("sound")));
+        m.add(makeSoundMenu());
+        return m;
+    }
+
+    private TPMenu makeSoundMenu() {
+        TPMenu m = new TPMenu("Sound Settings");
+        m.add(new TPMenuItemSimple("Sampled Sound (cymbals)",
+                                   () -> base.setSound(makeSampledSoundModule())));
+        m.add(new TPMenuItemSimple("No Sound",
+                                   () -> base.setSound(TPSound.NULL)));
         return m;
     }
 
@@ -495,17 +501,17 @@ public class App {
 
     private TPSequencePlatform makeSequenceGameAttackWaves() {
         TPSequencePlatform platform = new TPSequencePlatform("Sequence Game: Attack Waves");
+        platform.addProgram(makeAttackWaveLevel("lines", 4, TPFactory::lineActor));
         platform.addProgram(makeAttackWaveLevel("key-part thistle", 4,
                                                 TPFactory::regularThistleActorWithKeyPart));
         platform.addProgram(makeAttackWaveLevel("key-part polygon", 4,
                                                 TPFactory::regularPolygonActorWithKeyPart));
         platform.addProgram(makeAttackWaveLevel("key-part zig-zag", 6,
                                                 TPFactory::zigzagActorWithKeyPart));
-        platform.addProgram(makeAttackWaveLevel("lines", 4, TPFactory::lineActor));
         platform.addProgram(makeAttackWaveLevel("zig-zag", 10, TPFactory::zigzagActor));
         platform.addProgram(makeAttackWaveLevel("thistle", 20, TPFactory::regularThistleActor));
-        platform.addProgram(makeAttackWaveLevel("polygon", 8, TPFactory::regularPolygonActor));
         platform.addProgram(makeAttackWaveLevel("shooter", 5, TPFactory::shooterActor));
+        platform.addProgram(makeAttackWaveLevel("polygon", 8, TPFactory::regularPolygonActor));
         platform.addProgram(makeAttackWaveLevel("segmented-polygon", 6,
                                                 TPFactory::segmentedPolygonActor));
         platform.setPlayer(TPFactory.playerLine(new Pt(300, 300)));
