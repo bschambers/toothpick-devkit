@@ -33,12 +33,18 @@ public class FormEditorWindow extends JFrame
     private FormEditorPanel panel = new FormEditorPanel();
     private TPGeometry geometry = new TPGeometry();
     private boolean snapToGrid = true;
+    private int gridSize = 20;
 
     private boolean selectionActive = false;
     private boolean mouseLeftDown = false;
     private Point mark = new Point(0, 0);
     private Point point = new Point(0, 0);
+    private Point cursor = new Point(0, 0);
     private List<EditorHandle> handles = new ArrayList<>();
+
+    private Color gridColor = new Color(0, 0, 191);
+    private Color pointColor = new Color(127, 127, 127);
+    private Color cursorColor = new Color(191, 191, 191);
 
     public FormEditorWindow(TPEditor editor, ActorEditor actorEd) {
         super("Editing Form: " + actorEd.getActor().name);
@@ -78,10 +84,24 @@ public class FormEditorWindow extends JFrame
     }
 
     private void paintGrid(Graphics g) {
+        int xCenter = (int) geometry.xToScreen(geometry.getXCenter());
+        int yCenter = (int) geometry.yToScreen(geometry.getYCenter());
+        g.setColor(gridColor);
+        // vertical lines
+        int x = xCenter % gridSize;
+        while (x < getWidth()) {
+            g.drawLine(x, 0, x, getHeight());
+            x += gridSize;
+        }
+        // horizontal lines
+        int y = yCenter % gridSize;
+        while (y < getHeight()) {
+            g.drawLine(0, y, getWidth(), y);
+            y += gridSize;
+        }
+        // center axes
         g.setColor(Color.BLUE);
-        int x = (int) geometry.xToScreen(geometry.getXCenter());
-        int y = (int) geometry.yToScreen(geometry.getYCenter());
-        paintCenterCross(g, x, y);
+        paintCenterCross(g, xCenter, yCenter);
     }
 
     private void paintCenterCross(Graphics g, int x, int y) {
@@ -102,14 +122,16 @@ public class FormEditorWindow extends JFrame
         if (mode == Mode.DRAW) {
             if (mouseLeftDown) {
                 g.setColor(Color.CYAN);
-                g.drawLine(mark.x, mark.y, point.x, point.y);
+                Gfx.line(g, geometry, Gfx.STROKE_1, mark.x, mark.y, point.x, point.y);
             }
         }
         // center
         if (mode == Mode.CENTER) {
             if (mouseLeftDown) {
                 g.setColor(Color.GRAY);
-                paintCenterCross(g, point.x, point.y);
+                paintCenterCross(g,
+                                 (int) geometry.xToScreen(point.x),
+                                 (int) geometry.yToScreen(point.y));
             }
         }
         // editor handles
@@ -118,11 +140,13 @@ public class FormEditorWindow extends JFrame
                 g.setColor(Color.RED);
             else
                 g.setColor(eh.getColor());
-            Gfx.rectangle(g, eh.getHandle(geometry));
+            Gfx.rectangle(g, geometry, eh.getHandle());
         }
-        // point
-        g.setColor(Color.GRAY);
-        Gfx.crosshairs(g, point.x, point.y, 20);
+        // cursor and point
+        g.setColor(pointColor);
+        Gfx.crosshairs(g, geometry, point.x, point.y, 20);
+        g.setColor(cursorColor);
+        Gfx.crosshairs(g, geometry, cursor.x, cursor.y, 20);
         // info text
         g.setColor(Color.WHITE);
         g.drawString(makeModeString(), 20, 30);
@@ -135,7 +159,8 @@ public class FormEditorWindow extends JFrame
         return "MODE: (1) " + (mode == Mode.PARTS ? "PARTS" : "parts")
                 + " | (2) " + (mode == Mode.VERTICES ? "VERTICES" : "vertices")
                 + " | (3) " + (mode == Mode.DRAW ? "DRAW" : "draw")
-                + " | (4) " + (mode == Mode.CENTER ? "CENTER" : "center");
+                + " | (4) " + (mode == Mode.CENTER ? "CENTER" : "center")
+                + " --- (G) grid=" + snapToGrid;
     }
 
     public void recenterGrid() {
@@ -184,6 +209,19 @@ public class FormEditorWindow extends JFrame
         updateView();
     }
 
+    /**
+     * <p>Snapping to grid if the option is set.</p>
+     */
+    private Point convertPointPosition(Point p) {
+        int x = (int) geometry.xFromScreen(p.x);
+        int y = (int) geometry.yFromScreen(p.y);
+        if (snapToGrid) {
+            x = x - (x % gridSize);
+            y = y - (y % gridSize);
+        }
+        return new Point(x, y);
+    }
+
     /*------------------------- Keyboard Input -------------------------*/
 
     @Override
@@ -210,6 +248,10 @@ public class FormEditorWindow extends JFrame
             if (mode != Mode.CENTER)
                 switchToCenterMode();
             break;
+        case KeyEvent.VK_G:
+            snapToGrid = !snapToGrid;
+            updateView();
+            break;
         }
     }
 
@@ -227,12 +269,12 @@ public class FormEditorWindow extends JFrame
     @Override
     public void mousePressed(MouseEvent e) {
         mouseLeftDown = true;
-        mark = e.getPoint();
-        point = e.getPoint();
+        mark = convertPointPosition(e.getPoint());
+        point = convertPointPosition(e.getPoint());
         if (mode == Mode.PARTS || mode == Mode.VERTICES) {
             // select any handles under point
             for (EditorHandle eh : handles)
-                eh.setSelected(eh.getHandle(geometry).contains(point));
+                eh.setSelected(eh.getHandle().contains(point));
         }
         updateView();
     }
@@ -243,10 +285,10 @@ public class FormEditorWindow extends JFrame
         if (mode == Mode.DRAW) {
             if (!point.equals(mark)) {
                 // finalize line and add to form
-                double x1 = geometry.xFromScreen(mark.x);
-                double y1 = geometry.yFromScreen(mark.y);
-                double x2 = geometry.xFromScreen(point.x);
-                double y2 = geometry.yFromScreen(point.y);
+                double x1 = mark.x;
+                double y1 = mark.y;
+                double x2 = point.x;
+                double y2 = point.y;
                 Line ln = new Line(x1, y1, x2, y2);
                 System.out.println("new line: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
                 TPLine tpl = new TPLine(ln);
@@ -256,8 +298,8 @@ public class FormEditorWindow extends JFrame
             }
         } else if (mode == Mode.CENTER) {
             // set new center point for form
-            double xx = geometry.xFromScreen(point.x);
-            double yy = geometry.yFromScreen(point.y);
+            double xx = point.x;
+            double yy = point.y;
             geometry.xOffset += xx;
             geometry.yOffset += yy;
             for (int p = 0; p < getForm().numParts(); p++) {
@@ -278,19 +320,21 @@ public class FormEditorWindow extends JFrame
     public void mouseExited(MouseEvent e) {}
 
     @Override
-    public void mouseMoved(MouseEvent e) {}
+    public void mouseMoved(MouseEvent e) {
+        cursor = convertPointPosition(e.getPoint());
+        updateView();
+    }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        point = e.getPoint();
+        point = convertPointPosition(e.getPoint());
+        cursor = convertPointPosition(e.getPoint());
         if (mode == Mode.PARTS || mode == Mode.VERTICES) {
             // move any selected handles
             boolean modified = false;
             for (EditorHandle eh : handles)
                 if (eh.isSelected()) {
-                    // eh.setPosition(point.x, point.y);
-                    eh.setPosition((int) geometry.xFromScreen(point.x),
-                                   (int) geometry.yFromScreen(point.y));
+                    eh.setPosition(point.x, point.y);
                     eh.update();
                     modified = true;
                 }

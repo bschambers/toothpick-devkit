@@ -87,6 +87,8 @@ public class App {
         m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
         m.add(makeProgMenu(makeProgTextAndImages()));
         m.add(makeProgMenuNumDrones(makePowerupsGame()));
+        m.add(makeProgMenuNumDrones(makeChildOnRailsGame()));
+        m.add(makeProgMenu(makeProgStorySequence()));
         m.add(new TPMenuItemSimple("rain",
                                    () -> System.out.println("rain")));
         m.add(new TPMenuItemSimple("boss battle game",
@@ -499,6 +501,46 @@ public class App {
         return prog;
     }
 
+    private NumDronesProgram makeChildOnRailsGame() {
+        NumDronesProgram prog = new NumDronesProgram("Child-on-Rails Game");
+        prog.setDronesGoal(2);
+        // prog.addDroneFunc("point-anchor", 1, TPFactory::lineActor);
+        // prog.addDroneFunc("rails-anchor (loop)", 1, TPFactory::lineActor);
+        // prog.addDroneFunc("rails-anchor (bounce)", 1, TPFactory::lineActor);
+        prog.addDroneFunc("point-anchor (rectangle)", 1,
+                          (TPProgram tpp) -> makePointAnchorActorRect(tpp));
+        return prog;
+    }
+
+    private TPActor makePointAnchorActorRect(TPProgram prog) {
+        // rectangle form
+        Pt a = new Pt(-200, -50);
+        Pt b = new Pt(-200, 50);
+        Pt c = new Pt(200, 50);
+        Pt d = new Pt(200, -50);
+        TPLine lineA = new TPLine(new Line(a, b));
+        TPLine lineB = new TPLine(new Line(b, c));
+        TPLine lineC = new TPLine(new Line(c, d));
+        TPLine lineD = new TPLine(new Line(d, a));
+        TPForm form = new TPForm(new TPPart[] { lineA, lineB, lineC, lineD });
+        // rectangle actor
+        TPActor railsActor = new TPActor(form);
+        railsActor.name = "rails-anchor (loop)";
+        railsActor.setColorGetter(TPFactory.randColorGetter());
+        railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
+        railsActor.setPos(TPFactory.randBoundaryPos(prog));
+        railsActor.xInertia = 0.3;
+        railsActor.yInertia = 0.4;
+        // make child actor and anchor to point on rectangle
+        int numSides = 3 + (int) (Math.random() * 6);
+        TPForm thistleForm = TPFactory.regularThistleForm(30, numSides);
+        TPActor thistleActor = new TPActor(thistleForm);
+        thistleActor.angleInertia = 0.001;
+        thistleActor.addBehaviour(new PointAnchor());
+        railsActor.addChild(thistleActor);
+        return railsActor;
+    }
+
     private TPSequencePlatform makeSequenceGameAttackWaves() {
         TPSequencePlatform platform = new TPSequencePlatform("Sequence Game: Attack Waves");
         platform.addProgram(makeAttackWaveLevel("lines", 4, TPFactory::lineActor));
@@ -525,6 +567,11 @@ public class App {
         prog.addBehaviour(new FinishAfterNumKills(killsTarget));
         prog.setBGColor(Color.BLACK);
         return prog;
+    }
+
+    private TPProgram makeProgStorySequence() {
+        TPProgram tpp = new TPProgram("Story Sequence");
+        return tpp;
     }
 
     /**

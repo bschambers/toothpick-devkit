@@ -28,8 +28,8 @@ public class EditorHandle {
         this.y = y;
     }
 
-    public Rectangle getHandle(TPGeometry geom) {
-        return makeCenteredSquare((int) geom.xToScreen(x), (int) geom.yToScreen(y), size);
+    public Rectangle getHandle() {
+        return makeCenteredSquare(x, y, size);
     }
 
     public Color getColor() {
