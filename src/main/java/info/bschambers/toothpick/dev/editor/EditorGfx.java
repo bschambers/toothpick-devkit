@@ -3,10 +3,10 @@ package info.bschambers.toothpick.dev.editor;
 import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.actor.TPExplosion;
 import info.bschambers.toothpick.actor.TPForm;
-import info.bschambers.toothpick.actor.TPImage;
+import info.bschambers.toothpick.actor.TPImagePart;
 import info.bschambers.toothpick.actor.TPLine;
 import info.bschambers.toothpick.actor.TPPart;
-import info.bschambers.toothpick.actor.TPText;
+import info.bschambers.toothpick.actor.TPTextPart;
 import info.bschambers.toothpick.geom.Geom;
 import info.bschambers.toothpick.ui.swing.Gfx;
 import java.awt.Color;
@@ -54,10 +54,10 @@ public final class EditorGfx {
                 tpLineArchetype(g, geom, (TPLine) part);
             } else if (part instanceof TPExplosion) {
                 Gfx.explosion(g, geom, (TPExplosion) part);
-            } else if (part instanceof TPText) {
-                Gfx.text(g, geom, (TPText) part);
-            } else if (part instanceof TPImage) {
-                Gfx.image(g, geom, (TPImage) part);
+            } else if (part instanceof TPTextPart) {
+                Gfx.text(g, geom, (TPTextPart) part);
+            } else if (part instanceof TPImagePart) {
+                Gfx.image(g, geom, (TPImagePart) part);
             }
         }
     }

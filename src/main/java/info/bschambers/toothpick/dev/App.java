@@ -87,10 +87,9 @@ public class App {
         m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
         m.add(makeProgMenu(makeProgTextAndImages()));
         m.add(makeProgMenuNumDrones(makePowerupsGame()));
-        m.add(makeProgMenuNumDrones(makeChildOnRailsGame()));
+        m.add(makeProgMenuNumDrones(makePathAndPointAnchorGame()));
         m.add(makeProgMenu(makeProgStorySequence()));
-        m.add(new TPMenuItemSimple("rain",
-                                   () -> System.out.println("rain")));
+        m.add(makeProgMenu(makeRainGame()));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("levels game (loaded from disk)",
@@ -125,7 +124,7 @@ public class App {
                     }
                     prog.revivePlayer(true);
         }));
-        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.reset()));
+        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
         m.add(new TPMenuItemBool("pause when menu active ",
                                  prog::getPauseForMenu,
                                  prog::setPauseForMenu));
@@ -277,9 +276,29 @@ public class App {
                     System.out.println("show intersection = " + prog.isShowIntersections());
                     System.out.println("pause for menu = " + prog.getPauseForMenu());
                     System.out.println("num actors = " + prog.numActors());
+                    System.out.println("total num actors (inc children) = "
+                                       + getTotalNumActors(prog));
                     System.out.println("==============================");
         }));
         return m;
+    }
+
+    private int getTotalNumActors(TPProgram prog) {
+        int n = 0;
+        for (int i = 0; i < prog.numActors(); i++) {
+            n++;
+            n += getNumChildren(prog.getActor(i));
+        }
+        return n;
+    }
+
+    private int getNumChildren(TPActor actor) {
+        int n = 0;
+        for (int i = 0; i < actor.numChildren(); i++) {
+            n++;
+            n += getNumChildren(actor.getChild(i));
+        }
+        return n;
     }
 
     private TPMenu makeDiagnosticsMenu(TPProgram prog) {
@@ -339,8 +358,8 @@ public class App {
     private TPProgram makeProgStaticToothpick() {
         TPProgram tpp = new TPProgram("Static Toothpicks") {
                 @Override
-                public void reset() {
-                    super.reset();
+                public void init() {
+                    super.init();
                     // drones
                     addActor(makeLineActor(45, 20, 200, 30));
                     addActor(makeLineActor(200, 350, 400, 250));
@@ -352,15 +371,15 @@ public class App {
             };
         tpp.setShowIntersections(true);
         tpp.addBehaviour(new ToothpickPhysics());
-        tpp.reset();
+        tpp.init();
         return tpp;
     }
 
     private TPProgram makeProgTextAndImages() {
         TPProgram tpp = new TPProgram("Text and Images") {
                 @Override
-                public void reset() {
-                    super.reset();
+                public void init() {
+                    super.init();
                     Image img = loadImageFromFile("little_thingy.png");
                     for (int n = 0; n < 5; n++) {
 
@@ -370,7 +389,7 @@ public class App {
                         a.setPos(TPFactory.randBoundaryPos(this));
                         TPFactory.setRandHeading(a);
                         TPForm form = new TPForm();
-                        form.addPart(new TPText("Blah, Blah, Blah..."));
+                        form.addPart(new TPTextPart("Blah, Blah, Blah..."));
                         a.setForm(form);
                         addActor(a);
 
@@ -381,7 +400,7 @@ public class App {
                             a.setPos(TPFactory.randBoundaryPos(this));
                             TPFactory.setRandHeading(a);
                             form = new TPForm();
-                            form.addPart(new TPImage(img));
+                            form.addPart(new TPImagePart(img));
                             a.setForm(form);
                             addActor(a);
                         }
@@ -389,7 +408,7 @@ public class App {
                     }
                 }
             };
-        tpp.reset();
+        tpp.init();
         return tpp;
     }
 
@@ -449,8 +468,8 @@ public class App {
         }
 
         @Override
-        public void reset() {
-            super.reset();
+        public void init() {
+            super.init();
             setBGColor(ColorGetter.randColor());
         }
     }
@@ -501,44 +520,131 @@ public class App {
         return prog;
     }
 
-    private NumDronesProgram makeChildOnRailsGame() {
-        NumDronesProgram prog = new NumDronesProgram("Child-on-Rails Game");
-        prog.setDronesGoal(2);
-        // prog.addDroneFunc("point-anchor", 1, TPFactory::lineActor);
-        // prog.addDroneFunc("rails-anchor (loop)", 1, TPFactory::lineActor);
-        // prog.addDroneFunc("rails-anchor (bounce)", 1, TPFactory::lineActor);
+    private NumDronesProgram makePathAndPointAnchorGame() {
+        NumDronesProgram prog = new NumDronesProgram("Path and Point-Anchor Drones Game");
+        prog.setDronesGoal(3);
         prog.addDroneFunc("point-anchor (rectangle)", 1,
                           (TPProgram tpp) -> makePointAnchorActorRect(tpp));
+        prog.addDroneFunc("point-anchor (polygon)", 1,
+                          (TPProgram tpp) -> makePointAnchorActorPoly(tpp));
+        prog.addDroneFunc("path-anchor (rectangle)", 1,
+                          (TPProgram tpp) -> makePathAnchorActorRect(tpp));
+        prog.addDroneFunc("path-anchor (polygon)", 1,
+                          (TPProgram tpp) -> makePathAnchorActorPoly(tpp));
         return prog;
     }
 
     private TPActor makePointAnchorActorRect(TPProgram prog) {
-        // rectangle form
-        Pt a = new Pt(-200, -50);
-        Pt b = new Pt(-200, 50);
-        Pt c = new Pt(200, 50);
-        Pt d = new Pt(200, -50);
-        TPLine lineA = new TPLine(new Line(a, b));
-        TPLine lineB = new TPLine(new Line(b, c));
-        TPLine lineC = new TPLine(new Line(c, d));
-        TPLine lineD = new TPLine(new Line(d, a));
-        TPForm form = new TPForm(new TPPart[] { lineA, lineB, lineC, lineD });
-        // rectangle actor
-        TPActor railsActor = new TPActor(form);
-        railsActor.name = "rails-anchor (loop)";
+        return makePointAnchorActor(prog, TPFactory.rectangleForm(400, 100));
+    }
+
+    private TPActor makePointAnchorActorPoly(TPProgram prog) {
+        double size = 40 + (Math.random() * 50);
+        int numSides = 3 + (int) (Math.random() * 6);
+        return makePointAnchorActor(prog, TPFactory.regularPolygonForm(size, numSides));
+    }
+
+    /**
+     * <p>Anchor to a random point on anchorForm.</p>
+     */
+    private TPActor makePointAnchorActor(TPProgram prog, TPForm anchorForm) {
+
+        TPActor railsActor = new TPActor(anchorForm);
+        railsActor.name = "point-anchor";
         railsActor.setColorGetter(TPFactory.randColorGetter());
         railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
-        railsActor.setPos(TPFactory.randBoundaryPos(prog));
+        railsActor.setPos(TPFactory.randPos(prog));
+        // railsActor.setPos(TPFactory.randBoundaryPos(prog));
         railsActor.xInertia = 0.3;
-        railsActor.yInertia = 0.4;
+        // railsActor.yInertia = 0.4;
+
         // make child actor and anchor to point on rectangle
         int numSides = 3 + (int) (Math.random() * 6);
         TPForm thistleForm = TPFactory.regularThistleForm(30, numSides);
         TPActor thistleActor = new TPActor(thistleForm);
         thistleActor.angleInertia = 0.001;
-        thistleActor.addBehaviour(new PointAnchor());
-        railsActor.addChild(thistleActor);
+
+        TPFactory.anchorToRandPoint(thistleActor, railsActor);
         return railsActor;
+    }
+
+    private TPActor makePathAnchorActorRect(TPProgram prog) {
+        return makePathAnchorActor(prog, TPFactory.rectangleForm(400, 100));
+    }
+
+    private TPActor makePathAnchorActorPoly(TPProgram prog) {
+        double size = 40 + (Math.random() * 50);
+        int numSides = 3 + (int) (Math.random() * 6);
+        return makePathAnchorActor(prog, TPFactory.regularPolygonForm(size, numSides));
+    }
+
+    private TPActor makePathAnchorActor(TPProgram prog, TPForm pathForm) {
+        TPActor railsActor = new TPActor(pathForm);
+        railsActor.name = "path-anchor";
+        railsActor.setColorGetter(TPFactory.randColorGetter());
+        railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
+        railsActor.setPos(TPFactory.randPos(prog));
+        // railsActor.setPos(TPFactory.randBoundaryPos(prog));
+        railsActor.xInertia = 0.3;
+        // railsActor.yInertia = 0.4;
+
+        // make child actor and anchor to point on rectangle
+        int numSides = 3 + (int) (Math.random() * 6);
+        TPForm thistleForm = TPFactory.regularThistleForm(30, numSides);
+        TPActor thistleActor = new TPActor(thistleForm);
+        thistleActor.angleInertia = 0.001;
+
+        TPFactory.anchorToPath(thistleActor, railsActor);
+
+        return railsActor;
+    }
+
+    private TPProgram makeRainGame() {
+
+        // basic properties
+
+        TPProgram prog = new TPProgram("Rain Game (horizontal wrap-around)");
+        int width = 5000;
+        int height = 800;
+        int top = 30;
+        int bot = 770;
+        prog.setPlayArea(width, height);
+        prog.setBGColor(Color.BLUE);
+        prog.addBehaviour(new ScrollWithPlayer());
+        prog.addBehaviour(new ToothpickPhysics());
+
+        // make landscape
+
+        TPActor sky = new TPActor();
+        sky.x = 0.1;
+        sky.y = 0.1;
+        sky.name = "sky";
+        TPLine skyLine = TPFactory.lineStrong(0, top, width, top, ColorMono.WHITE);
+        sky.getForm().addPart(skyLine);
+        Spawning raining = new Spawning();
+        raining.setArchetype(new TPActor(TPFactory.singleLineForm(50)));
+        raining.setOriginLine(skyLine);
+        raining.setRelativeAngle(1.0);
+        raining.setRelativeRotation(0.25);
+        raining.setInterval(25);
+        sky.addBehaviour(raining);
+
+        TPActor floor = new TPActor();
+        floor.x = 0.1;
+        floor.y = 0.1;
+        floor.name = "floor";
+        floor.getForm().addPart(TPFactory.lineStrong(0, bot, width, bot,
+                                                     ColorMono.GREEN));
+        for (int i = 0; i < 20; i++) {
+            double x = Math.random() * width;
+            double y = Math.random() * 100;
+            floor.getForm().addPart(TPFactory.lineStrong(x, bot, x, bot - y,
+                                                         ColorMono.GREEN));
+        }
+
+        prog.setInitialActors(new TPActor[] { sky, floor });
+        prog.init();
+        return prog;
     }
 
     private TPSequencePlatform makeSequenceGameAttackWaves() {
