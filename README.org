@@ -34,6 +34,7 @@ ENTER = select menu item
 BACKSPACE = back to parent menu
 UP/DOWN = previous/next menu item
 LEFT/RIGHT = decrement/increment value or toggle boolean value
+h = hide/show menu (without deactivating it)
 
 ** Default Player Controls
 *** PLAYER 1:
@@ -61,6 +62,6 @@ actor will affect all selected actors likewise.
 
 * License
 
-Copyright 2019-present B. S. Chambers.
+Copyright 2019-present B. S. Tancham.
 
 Distributed under GPL, version 3.
