@@ -2,9 +2,12 @@
 
 This package contains development tools and examples for the Toothpick game engine.
 
+#+CAPTION: a screenshot of a mixed-drones game
+[[./toothpick-screenshot01.png]]
+
 * Build
 
-$ gradlew jar
+ $ gradlew jar
 
 * Dependencies
 
@@ -15,12 +18,28 @@ $ gradlew jar
 NOTE: build.gradle locates the toothpick-engine library at ~/lib/toothpick-engine.jar.
 
 * Usage
-
 ** Introduction
+
+Run the devkit app with:
+
+ $ gradlew run
 
 On running the devkit app a demonstration program starts running immediately.
 
 Press ~ESC~ to open the main menu.
+
+** Menu Controls
+ESC = activate/deactivate menu
+ENTER = select menu item
+BACKSPACE = back to parent menu
+UP/DOWN = previous/next menu item
+LEFT/RIGHT = decrement/increment value or toggle boolean value
+
+** Default Player Controls
+*** PLAYER 1:
+Q/A = UP/DOWN
+W/E = LEFT/RIGHT
+Z = ACTION
 
 ** TPEditor
 

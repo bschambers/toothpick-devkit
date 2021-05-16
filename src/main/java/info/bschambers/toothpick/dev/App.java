@@ -71,17 +71,49 @@ public class App {
         root.add(() -> makeProgMenu(() -> "run program: " + loadedProg.getTitle(), loadedProg));
         root.add(new TPMenuItemSimple("load program from file", () -> loadProgramXML()));
         root.add(makeGlobalMenu());
+        root.add(new TPMenuItemSimple("TEST MATHS ANOMOLIES!", () -> mathsTests()));
         root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
         return root;
+    }
+
+    private void mathsTests() {
+        System.out.println("MATHS TESTS");
+        mathsTestGeomAngle(0, 1);
+        mathsTestGeomAngle(3, 3);
+        mathsTestGeomAngle(2, 0);
+        mathsTestGeomAngle(0, -3);
+        mathsTestGeomAngle(-3, -3);
+        mathsTestGeomAngle(-5, 1);
+        mathsTestAngle("Math.PI * 0.25", Math.PI * 0.25);
+        mathsTestAngle("Math.PI * 0.5", Math.PI * 0.5);
+        mathsTestAngle("Math.PI * 1.25", Math.PI * 1.25);
+        mathsTestAngle("Math.PI * 1.5", Math.PI * 1.5);
+    }
+
+    private void mathsTestAngle(String label, double angle) {
+        double power = 12;
+        double x = ThrustInertiaInput.thrustAmountX(angle, power);
+        double y = ThrustInertiaInput.thrustAmountX(angle, power);
+        double angle2 = Geom.angle(0, 0, x, y);
+        System.out.println("ANGLE TEST (" + label + ")..."
+                           + "\n... input-angle=" + angle + " (to-degrees=" + Math.toDegrees(angle) + ")"
+                           + "\n... thrust-inertia: power=" + power + ", x=" + x + ", y=" + y
+                           + "\n... Geom.angle(0, 0, x, y)=" + angle2 + " (to-degrees=" + Math.toDegrees(angle2) + ")");
+    }
+
+    private void mathsTestGeomAngle(double x, double y) {
+        double angle3 = Geom.angle(0, 0, x, y);
+        System.out.println("Geom.angle(0, 0, " + x + ", " + y + ") = " + angle3
+                           + "\n... to-degrees=" + Math.toDegrees(angle3));
     }
 
     private TPMenu makeMenuPresetProgram() {
         TPMenu m = new TPMenu("preset programs");
         m.add(makeProgMenu(introSlides));
         m.add(makeProgMenu(makeProgStaticToothpick()));
-        m.add(makeProgMenuNumDrones(makeProgSimpleNumDronesGame()));
-        m.add(makeProgMenuNumDrones(new RibbonGame()));
-        m.add(makeProgMenuNumDrones(new MixedDronesGame()));
+        m.add(makeProgMenuNumDrones(makeNumDronesProgram("Simple Num-Drones Game")));
+        m.add(makeProgMenuNumDrones(makeRibbonGame()));
+        m.add(makeProgMenuNumDrones(makeMixedDronesGame()));
         m.add(makeProgMenuNumDrones(makeIncrementNumDronesGame()));
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
         m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
@@ -89,7 +121,12 @@ public class App {
         m.add(makeProgMenuNumDrones(makePowerupsGame()));
         m.add(makeProgMenuNumDrones(makePathAndPointAnchorGame()));
         m.add(makeProgMenu(makeProgStorySequence()));
+        m.add(makeProgMenu(makeJointedDronesGame()));
         m.add(makeProgMenu(makeRainGame()));
+        m.add(makeProgMenu(makeFastEnemiesGame()));
+        m.add(makeProgMenuNumDrones(makeTrajectoryChangeDronesGame()));
+        m.add(new TPMenuItemSimple("game with gravity wells",
+                                   () -> System.out.println("gravity wells/attractors")));
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("levels game (loaded from disk)",
@@ -108,55 +145,63 @@ public class App {
     }
 
     private TPMenu makeProgMenu(Supplier<String> ss, TPProgram prog) {
-        TPMenu m = new TPMenu(ss);
-        m.setInitAction(() -> {
-                System.out.println("prog-menu --> init-action");
-                base.setProgram(prog);
-                prog.updateActorsInPlace();
-            });
-        m.add(new TPMenuItemSimple("RUN", () -> {
-                    base.hideMenu();
-        }));
-        m.add(new TPMenuItemSimple("revive player", () -> {
-                    if (prog.getPlayer() == TPPlayer.NULL) {
-                        System.out.println("Null-player - adding default...");
-                        prog.setPlayer(TPFactory.playerLine(centerPt(prog)));
-                    }
-                    prog.revivePlayer(true);
-        }));
-        m.add(new TPMenuItemSimple("RESET PROGRAM", () -> prog.init()));
-        m.add(new TPMenuItemBool("pause when menu active ",
-                                 prog::getPauseForMenu,
-                                 prog::setPauseForMenu));
-        m.add(new TPMenuItemSimple(() -> "step forward by " + stopAfterVal + " frames",
-                                   () -> prog.setPauseAfter(stopAfterVal)));
-        m.add(new TPMenuItemIncr("set step-forward amount", () -> "" + stopAfterVal,
-                                 () -> stopAfterVal--,
-                                 () -> stopAfterVal++));
-        m.add(makePlayerMenu(prog));
-        m.add(makeScreenGeometryMenu(prog));
-        m.add(makePhysicsMenu(prog));
-        m.add(makeInfoPrintMenu(prog));
-        m.add(makeDiagnosticsMenu(prog));
-        m.add(new TPMenuItemBool("smear-mode",
-                                 prog::isSmearMode,
-                                 prog::setSmearMode));
-        m.add(makeInfoLinesMenu(prog));
-        m.add(makeBGColorMenu(prog));
+        TPMenu m = TPMenuFactory.makeProgramMenu(ss, prog, base);
         m.add(new TPMenuItemSimple("save state to disk (XML)", () -> saveProgramXML(prog)));
         m.add(new TPMenuItemSimple(() -> (window.isEditorMode() ?
                                           "DEACTIVATE EDITOR" : "activate editor"),
                                    () -> window.setEditorMode(!window.isEditorMode())));
+        m.add(makeOffscreenCanvasMenu(prog));
         return m;
     }
 
-    private TPMenu makeProgMenuNumDrones(NumDronesProgram prog) {
-        TPMenu m = makeProgMenu(prog);
-        m.add(new TPMenuItemIncr("num drones", () -> prog.getDronesGoal() + "",
-                                 () -> prog.setDronesGoal(prog.getDronesGoal() - 1),
-                                 () -> prog.setDronesGoal(prog.getDronesGoal() + 1)));
-        m.add(makeDroneChooserMenu(prog));
+    private TPMenu makeOffscreenCanvasMenu(TPProgram prog) {
+        TPMenu m = new TPMenu(() -> "offscreen smear-canvas (NOT ACTIVE)");
+        m.add(new TPMenuItemSimple("view offscreen canvas",
+                                   () -> System.out.println("TODO...")));
+        m.add(new TPMenuItemSimple("ACTIVATE/DEACTIVATE offscreen canvas",
+                                   () -> System.out.println("TODO...")));
+        m.add(new TPMenuItemSimple("clear offscreen canvas",
+                                   () -> System.out.println("TODO...")));
         return m;
+    }
+
+    private TPMenu makeProgMenuNumDrones(TPProgram prog) {
+        TPMenu m = makeProgMenu(prog);
+        m.add(new TPMenuItemIncr("num drones", () -> getDronesGoal(prog) + "",
+                                 () -> incrDronesGoal(prog, -1),
+                                 () -> incrDronesGoal(prog, 1)));
+        m.add(makeDroneChooserMenu(getDronesNumBehaviour(prog).getChooser()));
+        return m;
+    }
+
+    private int getDronesGoal(TPProgram prog) {
+        return getDronesNumBehaviour(prog).getDronesGoal();
+    }
+
+    private void incrDronesGoal(TPProgram prog, int amt) {
+        getDronesNumBehaviour(prog).incrDronesGoal(amt);
+    }
+
+    /**
+     * <p>Gets MaintainNumDrones behaviour from the input program. If no such behaviour
+     * exists, then create it and add to program before returning.</p>
+     *
+     * <p>WARNING! Method may have side effects - add behaviour to prog, if it doesn't
+     * already exist.</p>
+     */
+    private PBMaintainDronesNum getDronesNumBehaviour(TPProgram prog) {
+        PBMaintainDronesNum numDrones = null;
+        for (int i = 0; i < prog.numBehaviours(); i++) {
+            ProgramBehaviour pb = prog.getBehaviour(i);
+            if (pb instanceof PBMaintainDronesNum) {
+                numDrones = (PBMaintainDronesNum) pb;
+            }
+        }
+        if (numDrones == null) {
+            numDrones = new PBMaintainDronesNum();
+            prog.addBehaviour(numDrones);
+        }
+        return numDrones;
     }
 
     private TPMenu makeSequencePlatformMenu(TPSequencePlatform platform) {
@@ -184,45 +229,14 @@ public class App {
         return m;
     }
 
-    private TPMenu makeDroneChooserMenu(NumDronesProgram prog) {
+    private TPMenu makeDroneChooserMenu(RandomChooser<Function<TPProgram, TPActor>> chooser) {
         TPMenu m = new TPMenu("Adjust Drone-Chooser Weighting");
-        for (RandomChooser<Function<TPProgram, TPActor>>.ChooserItem item : prog.getChooser().chooserItemList()) {
+        for (RandomChooser<Function<TPProgram, TPActor>>.ChooserItem item : chooser.chooserItemList()) {
             m.add(new TPMenuItemIncr(item.getDescription(),
                                      () -> "" + item.weight,
                                      () -> item.weight--,
                                      () -> item.weight++));
         }
-        return m;
-    }
-
-    private TPMenu makePlayerMenu(TPProgram prog) {
-        TPMenu m = new TPMenu("Player Options: (" + prog.getTitle() + ")");
-        m.add(makePlayerControllerMenu(prog));
-        m.add(new TPMenuItemSimple("re-define keys", () -> System.out.println("...")));
-        m.add(new TPMenuItemSimple("calibrate input", () -> System.out.println("...")));
-        m.add(makePresetPlayersMenu(prog));
-        return m;
-    }
-
-    private TPMenu makePlayerControllerMenu(TPProgram prog) {
-        TPMenu m = new TPMenu(() -> "Change Input Handler (current = "
-                              + prog.getPlayer().getInputHandler().getClass().getSimpleName() + ")");
-        m.add(makeInputSwitcherItem(prog, new ThrustInertiaInput()));
-        m.add(makeInputSwitcherItem(prog, new EightWayInertiaInput()));
-        m.add(makeInputSwitcherItem(prog, new ThrustInput()));
-        m.add(makeInputSwitcherItem(prog, new EightWayInput()));
-        return m;
-    }
-
-    private TPMenuItem makeInputSwitcherItem(TPProgram prog, KeyInputHandler ih) {
-        return new TPMenuItemSimple(ih.getClass().getSimpleName(),
-                                    () -> prog.getPlayer().setInputHandler(ih));
-    }
-
-    private TPMenu makePresetPlayersMenu(TPProgram prog) {
-        TPMenu m = new TPMenu("preset players");
-        m.add(new TPMenuItemSimple("line-player",
-                                   () -> prog.setPlayer(playerPresetLine(prog))));
         return m;
     }
 
@@ -242,12 +256,13 @@ public class App {
 
     private TPMenu makePhysicsMenu(TPProgram prog) {
         TPMenu m = new TPMenu("physics type");
-        m.add(makePhysicsSwitcherItem(prog, new ToothpickPhysics()));
-        m.add(makePhysicsSwitcherItem(prog, new ToothpickPhysicsLight()));
+        m.add(makePhysicsSwitcherItem(prog, new PBToothpickPhysics()));
+        m.add(makePhysicsSwitcherItem(prog, new PBToothpickPhysicsLight()));
         return m;
     }
 
-    private TPMenuItem makePhysicsSwitcherItem(TPProgram prog, ToothpickPhysics physics) {
+    private TPMenuItem makePhysicsSwitcherItem(TPProgram prog,
+                                               PBToothpickPhysics physics) {
         String name = physics.getClass().getSimpleName();
         return new TPMenuItemSimple(name, () -> {
                 prog.addBehaviour(physics);
@@ -324,8 +339,8 @@ public class App {
     }
 
     private TPProgram makeIntroSlidesProg() {
-        NumDronesProgram prog = new NumDronesProgram("Intro Slideshow");
-        Slideshow ss = new Slideshow();
+        TPProgram prog = makeNumDronesProgram("Intro Slideshow");
+        PBSlideshow ss = new PBSlideshow();
         addSlide(ss, "toothpick_slideshow01.png");
         addSlide(ss, "toothpick_slideshow02.png");
         addSlide(ss, "toothpick_slideshow03.png");
@@ -334,7 +349,7 @@ public class App {
         return prog;
     }
 
-    private void addSlide(Slideshow slides, String filename) {
+    private void addSlide(PBSlideshow slides, String filename) {
         Image img = loadImageFromFile(filename);
         if (img != null)
             slides.addImage(img);
@@ -356,65 +371,65 @@ public class App {
     }
 
     private TPProgram makeProgStaticToothpick() {
-        TPProgram tpp = new TPProgram("Static Toothpicks") {
-                @Override
-                public void init() {
-                    super.init();
-                    // drones
-                    addActor(makeLineActor(45, 20, 200, 30));
-                    addActor(makeLineActor(200, 350, 400, 250));
-                    addActor(makeLineActor(500, 175, 550, 400));
-                    // player
-                    TPPlayer player = makePlayer(150, 150, 250, 150);
-                    setPlayer(player);
-                }
-            };
-        tpp.setShowIntersections(true);
-        tpp.addBehaviour(new ToothpickPhysics());
-        tpp.init();
-        return tpp;
+        TPProgram prog = new TPProgram("Static Toothpicks");
+        prog.setShowIntersections(true);
+        prog.addBehaviour(new PBToothpickPhysics());
+
+        // drones
+        prog.addActor(makeLineActor(45, 20, 200, 30));
+        prog.addActor(makeLineActor(200, 350, 400, 250));
+        prog.addActor(makeLineActor(500, 175, 550, 400));
+        prog.addActor(makeLineActor(600, 600, 650, 600));
+        prog.addActor(makeLineActor(620, 50, 620, 200));
+
+        // player
+        TPPart[] playerLines = new TPPart[] {
+            TPFactory.lineStandard(-50, 0, 50, 0), // horiz
+            TPFactory.lineStandard(0, -50, 0, 50), // vert
+            TPFactory.lineStandard(-50, -50, 50, 50), // diag
+            TPFactory.lineStandard(-50, 50, 50, -50), // diag
+        };
+        TPActor playerActor = new TPActor(new TPForm(playerLines));
+        playerActor.x = 200;
+        playerActor.y = 150;
+        TPPlayer player = makePlayer(playerActor);
+        prog.setPlayer(player);
+
+        prog.init();
+        prog.setResetSnapshot();
+        return prog;
     }
 
     private TPProgram makeProgTextAndImages() {
-        TPProgram tpp = new TPProgram("Text and Images") {
-                @Override
-                public void init() {
-                    super.init();
-                    Image img = loadImageFromFile("little_thingy.png");
-                    for (int n = 0; n < 5; n++) {
+        TPProgram prog = new TPProgram("Text and Images");
+        Image img = loadImageFromFile("little_thingy.png");
+        for (int n = 0; n < 5; n++) {
 
-                        // text drones
-                        TPActor a = new TPActor();
-                        a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
-                        a.setPos(TPFactory.randBoundaryPos(this));
-                        TPFactory.setRandHeading(a);
-                        TPForm form = new TPForm();
-                        form.addPart(new TPTextPart("Blah, Blah, Blah..."));
-                        a.setForm(form);
-                        addActor(a);
+            // text drones
+            TPActor a = new TPActor();
+            a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
+            a.setPos(TPFactory.randBoundaryPos(prog));
+            TPFactory.setRandHeading(a);
+            TPForm form = new TPForm();
+            form.addPart(new TPTextPart("Blah, Blah, Blah..."));
+            a.setForm(form);
+            prog.addActor(a);
 
-                        // image drones
-                        if (img != null) {
-                            a = new TPActor();
-                            a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
-                            a.setPos(TPFactory.randBoundaryPos(this));
-                            TPFactory.setRandHeading(a);
-                            form = new TPForm();
-                            form.addPart(new TPImagePart(img));
-                            a.setForm(form);
-                            addActor(a);
-                        }
+            // image drones
+            if (img != null) {
+                a = new TPActor();
+                a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
+                a.setPos(TPFactory.randBoundaryPos(prog));
+                TPFactory.setRandHeading(a);
+                form = new TPForm();
+                form.addPart(new TPImagePart(img));
+                a.setForm(form);
+                prog.addActor(a);
+            }
+        }
 
-                    }
-                }
-            };
-        tpp.init();
-        return tpp;
-    }
-
-    private NumDronesProgram makeProgSimpleNumDronesGame() {
-        NumDronesProgram prog = new NumDronesProgram("Simple Num-Drones Game");
-        prog.setBGColor(Color.BLACK);
+        prog.init();
+        prog.setResetSnapshot();
         return prog;
     }
 
@@ -432,7 +447,11 @@ public class App {
     }
 
     private TPPlayer makePlayer(double x1, double y1, double x2, double y2) {
-        TPPlayer player = new TPPlayer(makeLineActor(x1, y1, x2, y2));
+        return makePlayer(makeLineActor(x1, y1, x2, y2));
+    }
+
+    private TPPlayer makePlayer(TPActor actor) {
+        TPPlayer player = new TPPlayer(actor);
         player.setInputHandler(new EightWayInput());
         return player;
     }
@@ -455,82 +474,99 @@ public class App {
         return m;
     }
 
-    public static class RibbonGame extends NumDronesProgram {
-
-        public RibbonGame() {
-            super("Ribbon Game");
-            setSmearMode(true);
-            TPPlayer p = playerPresetLine(this);
-            p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
-            setPlayer(p);
-            resetPlayer();
-            setBGColor(ColorGetter.randColor());
-        }
-
-        @Override
-        public void init() {
-            super.init();
-            setBGColor(ColorGetter.randColor());
-        }
+    private TPProgram makeRibbonGame() {
+        TPProgram prog = makeNumDronesProgram("Ribbon Game");
+        prog.setSmearMode(true);
+        TPPlayer p = TPMenuFactory.playerPresetLine(prog);
+        p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
+        prog.setPlayer(p);
+        prog.resetPlayer();
+        prog.addResetBehaviour(new MiscProgramBehaviour((TPProgram tpp) ->
+                                                        tpp.setBGColor(ColorGetter.randColor())));
+        prog.setResetSnapshot();
+        return prog;
     }
 
-    public static class MixedDronesGame extends NumDronesProgram {
-        public MixedDronesGame() {
-            super("Mixed Drones Game");
-            addDroneFunc("line", 1, TPFactory::lineActor);
-            addDroneFunc("polygon", 1, TPFactory::regularPolygonActor);
-            addDroneFunc("thistle", 1, TPFactory::regularThistleActor);
-            addDroneFunc("segmented polygon", 1, TPFactory::segmentedPolygonActor);
-            addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
-            addDroneFunc("shooter", 1, TPFactory::shooterActor);
-            addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
-            addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
-            addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
-            setDronesGoal(6);
-            setBGColor(Color.BLACK);
-        }
+    private TPProgram makeMixedDronesGame() {
+        TPProgram prog = makeNumDronesProgram("Mixed Drones Game");
+        prog.setBGColor(Color.BLACK);
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(6);
+        dronesNum.addDroneFunc("line", 1, TPFactory::lineActor);
+        dronesNum.addDroneFunc("polygon", 1, TPFactory::regularPolygonActor);
+        dronesNum.addDroneFunc("thistle", 1, TPFactory::regularThistleActor);
+        dronesNum.addDroneFunc("segmented polygon", 1, TPFactory::segmentedPolygonActor);
+        dronesNum.addDroneFunc("zig-zag", 1, TPFactory::zigzagActor);
+        dronesNum.addDroneFunc("shooter", 1, TPFactory::shooterActor);
+        dronesNum.addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
+        dronesNum.addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
+        dronesNum.addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
+        dronesNum.addDroneFunc("key-part knobbly stick", 1, this::makeKnobblyStickActorWithKeyPart);
+        dronesNum.addDroneFunc("knobbly stick with jointed bristles", 1, this::makeKnobblyStickActorWithJointedBristles);
+        prog.setResetSnapshot();
+        return prog;
     }
 
-    private NumDronesProgram makeIncrementNumDronesGame() {
-        NumDronesProgram prog = new MixedDronesGame();
+    private TPProgram makeIncrementNumDronesGame() {
+        TPProgram prog = makeMixedDronesGame();
         prog.setTitle("Increment Num-Drones Game");
-        prog.setDronesGoal(1);
-        prog.addBehaviour(new NumDronesProgram.IncrementNumDronesWithScore());
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(1);
+        // goal-setter increments drones-goal number as player score increases
+        dronesNum.setGoalSetter(this::dividendOfPlayerScore);
+        prog.setResetSnapshot();
         return prog;
     }
 
-    private NumDronesProgram makeScrollingGame() {
-        NumDronesProgram prog = new MixedDronesGame();
+    private int dividendOfPlayerScore(TPProgram prog) {
+        return dividendOfPlayerScore(prog, 7.0);
+    }
+
+    private int dividendOfPlayerScore(TPProgram prog, double divisor) {
+        TPPlayer player = prog.getPlayer();
+        if (player == null)
+            return 1;
+        int num = player.getActor().numKills;
+        return Math.max(1, (int) (num / divisor));
+    }
+
+    private TPProgram makeScrollingGame() {
+        TPProgram prog = makeMixedDronesGame();
         prog.setTitle("Scrolling Game");
-        prog.addBehaviour(new ScrollWithPlayer());
+        prog.addBehaviour(new PBScrollWithPlayer());
+        prog.setResetSnapshot();
         return prog;
     }
 
-    private NumDronesProgram makePowerupsGame() {
-        NumDronesProgram prog = new NumDronesProgram("Powerups Game");
-        prog.addDroneFunc("line", 1, TPFactory::lineActor);
-        prog.addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
-        prog.addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
-        // prog.addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
-        prog.addDroneFunc("shooter", 1, TPFactory::shooterActor);
-        prog.addDroneFunc("powerup: shooting", 1, TPFactory::powerupActorShooting);
-        prog.addDroneFunc("powerup: sticky", 1, TPFactory::powerupActorSticky);
-        prog.addDroneFunc("powerup: strong", 1, TPFactory::powerupActorStrong);
-        prog.setDronesGoal(6);
+    private TPProgram makePowerupsGame() {
+        TPProgram prog = makeNumDronesProgram("Powerups Game");
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(6);
+        dronesNum.addDroneFunc("line", 1, TPFactory::lineActor);
+        dronesNum.addDroneFunc("key-part thistle", 1, TPFactory::regularThistleActorWithKeyPart);
+        dronesNum.addDroneFunc("key-part polygon", 1, TPFactory::regularPolygonActorWithKeyPart);
+        // dronesNum.addDroneFunc("key-part zig-zag", 1, TPFactory::zigzagActorWithKeyPart);
+        dronesNum.addDroneFunc("shooter", 1, TPFactory::shooterActor);
+        dronesNum.addDroneFunc("powerup: shooting", 1, TPFactory::powerupActorShooting);
+        dronesNum.addDroneFunc("powerup: sticky", 1, TPFactory::powerupActorSticky);
+        dronesNum.addDroneFunc("powerup: strong", 1, TPFactory::powerupActorStrong);
+        prog.setResetSnapshot();
         return prog;
     }
 
-    private NumDronesProgram makePathAndPointAnchorGame() {
-        NumDronesProgram prog = new NumDronesProgram("Path and Point-Anchor Drones Game");
-        prog.setDronesGoal(3);
-        prog.addDroneFunc("point-anchor (rectangle)", 1,
-                          (TPProgram tpp) -> makePointAnchorActorRect(tpp));
-        prog.addDroneFunc("point-anchor (polygon)", 1,
-                          (TPProgram tpp) -> makePointAnchorActorPoly(tpp));
-        prog.addDroneFunc("path-anchor (rectangle)", 1,
-                          (TPProgram tpp) -> makePathAnchorActorRect(tpp));
-        prog.addDroneFunc("path-anchor (polygon)", 1,
-                          (TPProgram tpp) -> makePathAnchorActorPoly(tpp));
+    private TPProgram makePathAndPointAnchorGame() {
+        TPProgram prog = makeNumDronesProgram("Path and Point-Anchor Drones Game");
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(3);
+        dronesNum.addDroneFunc("point-anchor (rectangle)", 1,
+                               (TPProgram tpp) -> makePointAnchorActorRect(tpp));
+        dronesNum.addDroneFunc("point-anchor (polygon)", 1,
+                               (TPProgram tpp) -> makePointAnchorActorPoly(tpp));
+        dronesNum.addDroneFunc("path-anchor (rectangle)", 1,
+                               (TPProgram tpp) -> makePathAnchorActorRect(tpp));
+        dronesNum.addDroneFunc("path-anchor (polygon)", 1,
+                               (TPProgram tpp) -> makePathAnchorActorPoly(tpp));
+        prog.setResetSnapshot();
         return prog;
     }
 
@@ -554,9 +590,7 @@ public class App {
         railsActor.setColorGetter(TPFactory.randColorGetter());
         railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
         railsActor.setPos(TPFactory.randPos(prog));
-        // railsActor.setPos(TPFactory.randBoundaryPos(prog));
         railsActor.xInertia = 0.3;
-        // railsActor.yInertia = 0.4;
 
         // make child actor and anchor to point on rectangle
         int numSides = 3 + (int) (Math.random() * 6);
@@ -584,9 +618,7 @@ public class App {
         railsActor.setColorGetter(TPFactory.randColorGetter());
         railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
         railsActor.setPos(TPFactory.randPos(prog));
-        // railsActor.setPos(TPFactory.randBoundaryPos(prog));
         railsActor.xInertia = 0.3;
-        // railsActor.yInertia = 0.4;
 
         // make child actor and anchor to point on rectangle
         int numSides = 3 + (int) (Math.random() * 6);
@@ -597,6 +629,147 @@ public class App {
         TPFactory.anchorToPath(thistleActor, railsActor);
 
         return railsActor;
+    }
+
+    private TPProgram makeJointedDronesGame() {
+        TPProgram prog = makeNumDronesProgram("Jointed Drones Game");
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(1);
+        dronesNum.addDroneFunc("knobbly stick with jointed bristles", 1,
+                               (TPProgram tpp) -> makeKnobblyStickActorWithJointedBristles(tpp));
+        dronesNum.addDroneFunc("double-jointed arm", 1,
+                               (TPProgram tpp) -> makeDoubleJointedArmActor(tpp));
+        prog.setResetSnapshot();
+        return prog;
+    }
+
+    private TPActor makeKnobblyStickActorWithJointedBristles(TPProgram prog) {
+        double rotationSpeed = 0.001 + (Math.random() * 0.02);
+        double bristleLength = 15 + (Math.random() * 50);
+        boolean symmetrical = Math.random() < 0.5;
+
+        TPActor actor = makeKnobblyStickActorWithKeyPart(prog);
+
+        TPForm form = actor.getForm();
+        int numLines = form.numLines();
+        int halfWay = numLines / 2;
+        for (int i = 0; i < numLines; i++) {
+            // add bristles to odd numbered lines
+            if (i % 2 == 1) {
+                TPLine ln = form.getLine(i);
+
+                TPActor child = new TPActor(TPFactory.singleLineForm(TPFactory.NEARLY_ZERO,
+                                                                     TPFactory.NEARLY_ZERO,
+                                                                     bristleLength,
+                                                                     TPFactory.NEARLY_ZERO));
+                child.angle = Math.random() * Math.PI;
+                if (symmetrical && i >= halfWay) {
+                    child.angleInertia = -rotationSpeed;
+                } else {
+                    child.angleInertia = rotationSpeed;
+                }
+
+                PointAnchor anchor = new PointAnchor();
+                anchor.setAnchor(ln, form);
+
+                child.addBehaviour(anchor);
+                actor.addChild(child);
+            }
+        }
+        return actor;
+    }
+
+    private TPActor makeKnobblyStickActorWithKeyPart(TPProgram prog) {
+        // customisable variables
+        double length = 500;
+        double width = 40;
+        int numSections = 4;
+
+        TPForm form = knobblyStickForm(length, width, numSections);
+        TPActor a = new TPActor(form);
+        a.name = "knobbly stick (" + numSections + " sections)";
+        TPFactory.setStrongWithRandomKeyLine(a);
+        a.setColorGetter(TPFactory.randColorGetter());
+        a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
+        // random angle and heading
+        a.angle = Math.random() * Math.PI;
+        TPFactory.setRandHeading(a);
+        return a;
+    }
+
+    private TPForm knobblyStickForm(double length, double width, int numSections) {
+        Pt[] points = knobblyStickPoints(length, width, numSections);
+        return TPFactory.closedLoopForm(points);
+    }
+
+    private Pt[] knobblyStickPoints(double length, double width, int numSections) {
+        double sectionLength = length / numSections;
+        double outWidth = width / 2;
+        double inWidth = width / 4; // waist points
+        double xStep = sectionLength / 2;
+        Pt[] points = new Pt[numSections * 4];
+        int n = 0;
+        // outwards - upper edge, left to right
+        double x = -(length / 2);
+        double y = 0; // for end point
+        for (int i = 0; i < numSections; i++) {
+            points[n] = new Pt(x, y);
+            x += xStep;
+            y = outWidth;
+            n++;
+            points[n] = new Pt(x, y);
+            x += xStep;
+            y = inWidth;
+            n++;
+        }
+        // return journey - lower edge, right to left
+        x = length / 2;
+        y = 0; // for end point
+        for (int i = 0; i < numSections; i++) {
+            points[n] = new Pt(x, y);
+            x -= xStep;
+            y = -outWidth;
+            n++;
+            points[n] = new Pt(x, y);
+            x -= xStep;
+            y = -inWidth;
+            n++;
+        }
+        return points;
+    }
+
+    private TPActor makeDoubleJointedArmActor(TPProgram prog) {
+        // triangular base-actor
+        double size = TPFactory.rand(30, 70);
+        TPActor baseActor = TPFactory.regularPolygonActor(prog, size, 3);
+        TPFactory.setRandAngleAndHeading(baseActor);
+        baseActor.angleInertia = 0;
+
+        double jointLen = 70;
+
+        TPActor child1 = new TPActor(TPFactory.singleLineForm(TPFactory.NEARLY_ZERO,
+                                                              TPFactory.NEARLY_ZERO,
+                                                              jointLen,
+                                                              TPFactory.NEARLY_ZERO));
+        child1.setColorGetter(TPFactory.randColorGetter());
+        child1.angleInertia = Math.random() * 0.01;
+        PointAnchor anchor1 = new PointAnchor();
+        anchor1.setAnchor(baseActor.getForm().getLine(0), baseActor.getForm());
+        child1.addBehaviour(anchor1);
+        baseActor.addChild(child1);
+
+        TPActor child2 = new TPActor(TPFactory.singleLineForm(TPFactory.NEARLY_ZERO,
+                                                              TPFactory.NEARLY_ZERO,
+                                                              jointLen,
+                                                              TPFactory.NEARLY_ZERO));
+        child2.setColorGetter(TPFactory.randColorGetter());
+        child2.angleInertia = Math.random() * 0.01;
+        PointAnchor anchor2 = new PointAnchor();
+        anchor2.setAnchor(child1.getForm().getLine(0), child1.getForm(), false);
+        child2.addBehaviour(anchor2);
+        child1.addChild(child2);
+
+        return baseActor;
     }
 
     private TPProgram makeRainGame() {
@@ -610,8 +783,8 @@ public class App {
         int bot = 770;
         prog.setPlayArea(width, height);
         prog.setBGColor(Color.BLUE);
-        prog.addBehaviour(new ScrollWithPlayer());
-        prog.addBehaviour(new ToothpickPhysics());
+        prog.addBehaviour(new PBScrollWithPlayer());
+        prog.addBehaviour(new PBToothpickPhysics());
 
         // make landscape
 
@@ -642,9 +815,56 @@ public class App {
                                                          ColorMono.GREEN));
         }
 
-        prog.setInitialActors(new TPActor[] { sky, floor });
+        prog.addActor(sky);
+        prog.addActor(floor);
         prog.init();
+        prog.setResetSnapshot();
         return prog;
+    }
+
+    private TPProgram makeFastEnemiesGame() {
+        TPProgram prog = new TPProgram("Fast moving enemies (try to match velocity)");
+        TPGeometry geom = new TPGeometry();
+        geom.setupAndCenter(2000, 800);
+        prog.setGeometry(geom);
+        prog.addBehaviour(new PBToothpickPhysics());
+        prog.addBehaviour(new PBScrollWithPlayer());
+
+        TPActor a1 = TPFactory.regularThistleActor(prog);
+        a1.x = 100;
+        a1.y = 200;
+        a1.xInertia = 20;
+        a1.yInertia = 0;
+        prog.addActor(a1);
+
+        TPActor a2 = TPFactory.regularThistleActor(prog);
+        a2.x = 100;
+        a2.y = 500;
+        a2.xInertia = 30;
+        a2.yInertia = 0;
+        prog.addActor(a2);
+
+        prog.init();
+        prog.setResetSnapshot();
+        return prog;
+    }
+
+    private TPProgram makeTrajectoryChangeDronesGame() {
+        TPProgram prog = makeNumDronesProgram("Trajectory-Change Drones Game");
+        prog.setBGColor(Color.BLUE);
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(1);
+        dronesNum.addDroneFunc("trajectory-change line", 1, this::makeTrajectoryChangeLineActor);
+        prog.setSmearMode(true);
+        prog.setResetSnapshot();
+        return prog;
+    }
+
+    private TPActor makeTrajectoryChangeLineActor(TPProgram prog) {
+        TPActor a = TPFactory.lineActor(prog);
+        a.angleInertia = 0;
+        a.addBehaviour(new TrajectoryChangeBehaviour());
+        return a;
     }
 
     private TPSequencePlatform makeSequenceGameAttackWaves() {
@@ -668,16 +888,26 @@ public class App {
 
     private TPProgram makeAttackWaveLevel(String title, int killsTarget,
                                           Function<TPProgram, TPActor> droneFunc) {
-        NumDronesProgram prog = new NumDronesProgram(title + " wave");
-        prog.addDroneFunc(title, 1, droneFunc);
-        prog.addBehaviour(new FinishAfterNumKills(killsTarget));
+        TPProgram prog = makeNumDronesProgram(title + " wave");
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.addDroneFunc(title, 1, droneFunc);
+        prog.addBehaviour(new PBFinishAfterNumKills(killsTarget));
         prog.setBGColor(Color.BLACK);
+        prog.setResetSnapshot();
         return prog;
     }
 
     private TPProgram makeProgStorySequence() {
         TPProgram tpp = new TPProgram("Story Sequence");
         return tpp;
+    }
+
+    private TPProgram makeNumDronesProgram(String title) {
+        TPProgram prog = new TPProgram(title);
+        prog.addBehaviour(new PBToothpickPhysics());
+        prog.addBehaviour(new PBMaintainDronesNum());
+        prog.setResetSnapshot();
+        return prog;
     }
 
     /**
@@ -733,18 +963,8 @@ public class App {
 
     /*--------------------- static utility methods ---------------------*/
 
-    private static Pt centerPt(TPProgram prog) {
-        return new Pt(prog.getGeometry().getXCenter(),
-                      prog.getGeometry().getYCenter());
-
-    }
-
     private static String rgbStr(Color c) {
         return c.getRed() + ", " + c.getGreen() + ", " + c.getBlue();
-    }
-
-    private static TPPlayer playerPresetLine(TPProgram prog) {
-        return TPFactory.playerLine(centerPt(prog));
     }
 
 }

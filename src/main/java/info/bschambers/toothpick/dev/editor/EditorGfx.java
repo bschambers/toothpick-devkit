@@ -63,7 +63,7 @@ public final class EditorGfx {
     }
 
     public static void tpLineArchetype(Graphics g, TPGeometry geom, TPLine tpl) {
-        Gfx.line(g, geom, Gfx.getStrokeForLineStrength(tpl),
+        Gfx.line(g, geom, Gfx.getStrokeForLineStrength(geom, tpl),
                  tpl.getArchetype().start, tpl.getArchetype().end);
     }
 
