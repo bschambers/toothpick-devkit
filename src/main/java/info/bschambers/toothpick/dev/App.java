@@ -124,6 +124,7 @@ public class App {
         m.add(makeProgMenu(makeJointedDronesGame()));
         m.add(makeProgMenu(makeRainGame()));
         m.add(makeProgMenu(makeFastEnemiesGame()));
+        m.add(makeProgMenuNumDrones(makeSeekerAvoiderGame()));
         m.add(makeProgMenuNumDrones(makeTrajectoryChangeDronesGame()));
         m.add(new TPMenuItemSimple("game with gravity wells",
                                    () -> System.out.println("gravity wells/attractors")));
@@ -481,8 +482,8 @@ public class App {
         p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
         prog.setPlayer(p);
         prog.resetPlayer();
-        prog.addResetBehaviour(new MiscProgramBehaviour((TPProgram tpp) ->
-                                                        tpp.setBGColor(ColorGetter.randColor())));
+        prog.addResetBehaviour(new PBMisc((TPProgram tpp) ->
+                                          tpp.setBGColor(ColorGetter.randColor())));
         prog.setResetSnapshot();
         return prog;
     }
@@ -847,6 +848,32 @@ public class App {
         prog.init();
         prog.setResetSnapshot();
         return prog;
+    }
+
+    private TPProgram makeSeekerAvoiderGame() {
+        TPProgram prog = makeNumDronesProgram("Seeker/Avoider Game");
+        PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
+        dronesNum.setDronesGoal(2);
+        dronesNum.addDroneFunc("seeker", 1,
+                               (TPProgram tpp) -> makeSeekerDrone(tpp));
+        dronesNum.addDroneFunc("avoider", 1,
+                               (TPProgram tpp) -> makeAvoiderDrone(tpp));
+        prog.setResetSnapshot();
+        return prog;
+    }
+
+    private TPActor makeSeekerDrone(TPProgram prog) {
+        TPActor a = TPFactory.lineActor(prog);
+        double speed = Math.random();
+        a.addBehaviour(new SeekerBehaviour(speed, true));
+        return a;
+    }
+
+    private TPActor makeAvoiderDrone(TPProgram prog) {
+        TPActor a = TPFactory.lineActor(prog);
+        double speed = Math.random();
+        a.addBehaviour(new AvoiderBehaviour(speed, true));
+        return a;
     }
 
     private TPProgram makeTrajectoryChangeDronesGame() {
