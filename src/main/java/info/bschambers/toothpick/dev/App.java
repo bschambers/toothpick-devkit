@@ -272,34 +272,6 @@ public class App {
         });
     }
 
-    private TPMenu makeInfoPrintMenu(TPProgram prog) {
-        TPMenu m = new TPMenu("print info");
-        m.add(new TPMenuItemSimple("print player info", () -> {
-                    TPPlayer p = prog.getPlayer();
-                    System.out.println("==============================");
-                    System.out.println("PLAYER = " + p);
-                    System.out.println("INPUT = " + p.getInputHandler() + "\n");
-                    System.out.println("ARCHETYPE:\n" + p.getArchetype().infoString());
-                    System.out.println("ACTOR:\n" + p.getActor().infoString());
-                    System.out.println("==============================");
-        }));
-        m.add(new TPMenuItemSimple("print game info", () -> {
-                    System.out.println("==============================");
-                    System.out.println("class = " + prog.getClass());
-                    System.out.println("title = " + prog.getTitle());
-                    System.out.println("geometry = " + prog.getGeometry());
-                    System.out.println("bg color = " + prog.getBGColor());
-                    System.out.println("smear-mode = " + prog.isSmearMode());
-                    System.out.println("show intersection = " + prog.isShowIntersections());
-                    System.out.println("pause for menu = " + prog.getPauseForMenu());
-                    System.out.println("num actors = " + prog.numActors());
-                    System.out.println("total num actors (inc children) = "
-                                       + getTotalNumActors(prog));
-                    System.out.println("==============================");
-        }));
-        return m;
-    }
-
     private int getTotalNumActors(TPProgram prog) {
         int n = 0;
         for (int i = 0; i < prog.numActors(); i++) {
@@ -395,7 +367,7 @@ public class App {
         playerActor.x = 200;
         playerActor.y = 150;
         TPPlayer player = makePlayer(playerActor);
-        prog.setPlayer(player);
+        prog.addPlayer(player);
 
         prog.init();
         prog.setResetSnapshot();
@@ -481,8 +453,8 @@ public class App {
         prog.setSmearMode(true);
         TPPlayer p = TPMenuFactory.playerPresetLine(prog);
         p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
-        prog.setPlayer(p);
-        prog.resetPlayer();
+        prog.addPlayer(p);
+        prog.revivePlayer(0, false);
         prog.addResetBehaviour(new PBMisc((TPProgram tpp) ->
                                           tpp.setBGColor(ColorGetter.randColor())));
         prog.setResetSnapshot();
@@ -524,11 +496,11 @@ public class App {
         return dividendOfPlayerScore(prog, 7.0);
     }
 
+    /** Uses player 1, if they exist. */
     private int dividendOfPlayerScore(TPProgram prog, double divisor) {
-        TPPlayer player = prog.getPlayer();
-        if (player == null)
+        if (prog.numPlayers() <= 0)
             return 1;
-        int num = player.getActor().numKills;
+        int num = prog.getPlayer(0).getActor().numKills;
         return Math.max(1, (int) (num / divisor));
     }
 
@@ -910,7 +882,7 @@ public class App {
         platform.addProgram(makeAttackWaveLevel("polygon", 8, TPFactory::regularPolygonActor));
         platform.addProgram(makeAttackWaveLevel("segmented-polygon", 6,
                                                 TPFactory::segmentedPolygonActor));
-        platform.setPlayer(TPFactory.playerLine(new Pt(300, 300)));
+        platform.addPlayer(TPFactory.playerLine(new Pt(300, 300)));
         return platform;
     }
 
