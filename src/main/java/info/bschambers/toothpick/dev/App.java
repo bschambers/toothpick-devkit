@@ -3,7 +3,7 @@ package info.bschambers.toothpick.dev;
 import info.bschambers.toothpick.*;
 import info.bschambers.toothpick.actor.*;
 import info.bschambers.toothpick.dev.editor.TPEditor;
-import info.bschambers.toothpick.diskops.TPXml;
+import info.bschambers.toothpick.diskops.*;
 import info.bschambers.toothpick.geom.*;
 import info.bschambers.toothpick.sound.*;
 import info.bschambers.toothpick.ui.*;
@@ -70,6 +70,7 @@ public class App {
         root.add(makeMenuPresetProgram());
         root.add(() -> makeProgMenu(() -> "run program: " + loadedProg.getTitle(), loadedProg));
         root.add(new TPMenuItemSimple("load program from file", () -> loadProgramXML()));
+        root.add(new TPMenuItemSimple("import from SVG file", () -> importSVG()));
         root.add(makeGlobalMenu());
         root.add(new TPMenuItemSimple("TEST MATHS ANOMOLIES!", () -> mathsTests()));
         root.add(new TPMenuItemSimple("EXIT", () -> window.exit()));
@@ -980,6 +981,27 @@ public class App {
             } else {
                 System.out.println("... couldn't save file!");
             }
+        }
+    }
+
+    /**
+     * <p>Launches file chooser dialog and then attempts to load the selected file as a
+     * TPProgram.</p>
+     */
+    private void importSVG() {
+        System.out.println("Import from SVG file");
+        JFileChooser chooser = new JFileChooser(saveDir);
+        FileNameExtensionFilter filter
+            = new FileNameExtensionFilter("SVG files", "svg");
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(window);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File f = chooser.getSelectedFile();
+            System.out.println("... file chosen: " + f.getName());
+            SVGImporter importer = new SVGImporter();
+            TPProgram prog = importer.importSVG(f);
+            prog.setTitle("Imported from SVG file (" + f.getName() + ")");
+            loadedProg = prog;
         }
     }
 
