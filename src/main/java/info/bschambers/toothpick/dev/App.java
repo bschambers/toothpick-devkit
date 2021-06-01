@@ -93,8 +93,8 @@ public class App {
 
     private void mathsTestAngle(String label, double angle) {
         double power = 12;
-        double x = ThrustInertiaInput.thrustAmountX(angle, power);
-        double y = ThrustInertiaInput.thrustAmountX(angle, power);
+        double x = KeyInputThrustInertia.thrustAmountX(angle, power);
+        double y = KeyInputThrustInertia.thrustAmountX(angle, power);
         double angle2 = Geom.angle(0, 0, x, y);
         System.out.println("ANGLE TEST (" + label + ")..."
                            + "\n... input-angle=" + angle + " (to-degrees=" + Math.toDegrees(angle) + ")"
@@ -111,24 +111,28 @@ public class App {
     private TPMenu makeMenuPresetProgram() {
         TPMenu m = new TPMenu("preset programs");
         m.add(makeProgMenu(introSlides));
+        m.add(makeProgMenu(makeProgTextAndImages()));
         m.add(makeProgMenu(makeProgStaticToothpick()));
+        m.add(TPMenuItem.SPACER); // num-drones
         m.add(makeProgMenuNumDrones(makeNumDronesProgram("Simple Num-Drones Game")));
         m.add(makeProgMenuNumDrones(makeRibbonGame()));
         m.add(makeProgMenuNumDrones(makeMixedDronesGame()));
         m.add(makeProgMenuNumDrones(makeIncrementNumDronesGame()));
         m.add(makeProgMenuNumDrones(makeScrollingGame()));
-        m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
-        m.add(makeProgMenu(makeProgTextAndImages()));
         m.add(makeProgMenuNumDrones(makePowerupsGame()));
         m.add(makeProgMenuNumDrones(makePathAndPointAnchorGame()));
-        m.add(makeProgMenu(makeProgStorySequence()));
         m.add(makeProgMenu(makeJointedDronesGame()));
-        m.add(makeProgMenu(makeRainGame()));
         m.add(makeProgMenu(makeFastEnemiesGame()));
         m.add(makeProgMenuNumDrones(makeSeekerAvoiderGame()));
         m.add(makeProgMenuNumDrones(makeTrajectoryChangeDronesGame()));
-        m.add(new TPMenuItemSimple("game with gravity wells",
-                                   () -> System.out.println("gravity wells/attractors")));
+        m.add(TPMenuItem.SPACER); // special/designed
+        m.add(makeProgMenu(makeRainGame()));
+        m.add(TPMenuItem.SPACER); // sequence
+        m.add(makeSequencePlatformMenu(makeSequenceGameAttackWaves()));
+        m.add(makeProgMenu(makeProgStorySequence()));
+        m.add(TPMenuItem.SPACER); // two players
+        m.add(makeProgMenu(makeProgTwoPlayerDuel()));
+        m.add(TPMenuItem.SPACER); // TODO
         m.add(new TPMenuItemSimple("boss battle game",
                                    () -> System.out.println("boss battle")));
         m.add(new TPMenuItemSimple("levels game (loaded from disk)",
@@ -137,8 +141,8 @@ public class App {
                                    () -> System.out.println("asteroid")));
         m.add(new TPMenuItemSimple("gravity orbit game",
                                    () -> System.out.println("orbit")));
-        m.add(new TPMenuItemSimple("two player duel",
-                                   () -> System.out.println("two player duel")));
+        m.add(new TPMenuItemSimple("game with gravity wells",
+                                   () -> System.out.println("gravity wells/attractors")));
         return m;
     }
 
@@ -426,7 +430,7 @@ public class App {
 
     private TPPlayer makePlayer(TPActor actor) {
         TPPlayer player = new TPPlayer(actor);
-        player.setInputHandler(new EightWayInput());
+        player.setInputHandler(new KeyInputEightWay());
         return player;
     }
 
@@ -769,7 +773,7 @@ public class App {
         TPLine skyLine = TPFactory.lineStrong(0, top, width, top, ColorMono.WHITE);
         sky.getForm().addPart(skyLine);
         Spawning raining = new Spawning();
-        raining.setArchetype(new TPActor(TPFactory.singleLineForm(50)));
+        raining.setArchetype(new TPActor(TPFactory.singleLineFormHoriz(50)));
         raining.setOriginLine(skyLine);
         raining.setRelativeAngle(1.0);
         raining.setRelativeRotation(0.25);
@@ -908,6 +912,38 @@ public class App {
         prog.addBehaviour(new PBMaintainDronesNum());
         prog.setResetSnapshot();
         return prog;
+    }
+
+    private TPProgram makeProgTwoPlayerDuel() {
+        TPProgram prog = new TPProgram("Two Player Duel");
+        prog.addBehaviour(new PBToothpickPhysics());
+        TPGeometry geom = prog.getGeometry();
+        double x1 = geom.getXOneThird();
+        double x2 = geom.getXTwoThirds();
+        double y = geom.getYCenter();
+        TPPlayer p1 = TPFactory.playerLine(new Pt(x1, y));
+        p1.setInputHandler(makeKeyInputPlayer1());
+        prog.addPlayer(p1);
+        TPPlayer p2 = TPFactory.playerLine(new Pt(x2, y));
+        p2.setInputHandler(makeKeyInputPlayer2());
+        p2.getActor().setColorGetter(new ColorMono(Color.GREEN));
+        p2.getArchetype().setColorGetter(new ColorMono(Color.GREEN));
+        prog.addPlayer(p2);
+        prog.init();
+        prog.setResetSnapshot();
+        return prog;
+    }
+
+    private KeyInputHandler makeKeyInputPlayer1() {
+        KeyInputHandler keys = new KeyInputThrustInertia();
+        TPFactory.setPlayerKeysQAWE(keys);
+        return keys;
+    }
+
+    private KeyInputHandler makeKeyInputPlayer2() {
+        KeyInputHandler keys = new KeyInputThrustInertia();
+        TPFactory.setPlayerKeysIKOP(keys);
+        return keys;
     }
 
     /**
