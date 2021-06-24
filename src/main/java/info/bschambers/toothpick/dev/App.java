@@ -361,13 +361,13 @@ public class App {
         prog.addActor(makeLineActor(620, 50, 620, 200));
 
         // player
-        TPPart[] playerLines = new TPPart[] {
-            TPFactory.lineStandard(-50, 0, 50, 0), // horiz
-            TPFactory.lineStandard(0, -50, 0, 50), // vert
-            TPFactory.lineStandard(-50, -50, 50, 50), // diag
-            TPFactory.lineStandard(-50, 50, 50, -50), // diag
-        };
-        TPActor playerActor = new TPActor(new TPForm(playerLines));
+        TPForm form = new TPForm();
+        form.addLinkReuseNodes(-50, 0, 50, 0); // horiz
+        form.addLinkReuseNodes(0, -50, 0, 50); // vert
+        form.addLinkReuseNodes(-50, -50, 50, 50); // diag
+        form.addLinkReuseNodes(-50, 50, 50, -50); // diag
+        form.housekeeping();
+        TPActor playerActor = new TPActor(form);
         playerActor.x = 200;
         playerActor.y = 150;
         TPPlayer player = makePlayer(playerActor);
@@ -417,7 +417,9 @@ public class App {
         Pt pos = Geom.midPoint(start, end);
         start = start.add(pos.invert());
         end = end.add(pos.invert());
-        TPForm form = new TPForm(new TPPart[] { new TPLine(new Line(start, end)) });
+        // TPForm form = new TPForm(new TPPart[] { new TPLine(new Line(start, end)) });
+        TPForm form = new TPForm();
+        form.addLinkReuseNodes(start.x, start.y, end.x, end.y);
         TPActor actor = new TPActor(form);
         actor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_AT_BOUNDS);
         actor.setPos(pos);
@@ -455,7 +457,8 @@ public class App {
     private TPProgram makeRibbonGame() {
         TPProgram prog = makeNumDronesProgram("Ribbon Game");
         prog.setSmearMode(true);
-        TPPlayer p = TPMenuFactory.playerPresetLine(prog);
+        TPPlayer p = TPMenuFactory.playerPresetLine();
+        p.getArchetype().setPos(TPFactory.p1StartPos(prog));
         p.getArchetype().setColorGetter(new ColorSmoothMono(Color.PINK));
         prog.addPlayer(p);
         prog.revivePlayer(0, false);
@@ -537,13 +540,13 @@ public class App {
         PBMaintainDronesNum dronesNum = getDronesNumBehaviour(prog);
         dronesNum.setDronesGoal(3);
         dronesNum.addDroneFunc("point-anchor (rectangle)", 1,
-                               (TPProgram tpp) -> makePointAnchorActorRect(tpp));
+                               this::makePointAnchorActorRect);
         dronesNum.addDroneFunc("point-anchor (polygon)", 1,
-                               (TPProgram tpp) -> makePointAnchorActorPoly(tpp));
+                               this::makePointAnchorActorPoly);
         dronesNum.addDroneFunc("path-anchor (rectangle)", 1,
-                               (TPProgram tpp) -> makePathAnchorActorRect(tpp));
+                               this::makePathAnchorActorRect);
         dronesNum.addDroneFunc("path-anchor (polygon)", 1,
-                               (TPProgram tpp) -> makePathAnchorActorPoly(tpp));
+                               this::makePathAnchorActorPoly);
         prog.setResetSnapshot();
         return prog;
     }
@@ -565,7 +568,7 @@ public class App {
 
         TPActor railsActor = new TPActor(anchorForm);
         railsActor.name = "point-anchor";
-        railsActor.setColorGetter(TPFactory.randColorGetter());
+        railsActor.setColorGetter(TPFactory.randColorGetterDynamic());
         railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
         railsActor.setPos(TPFactory.randPos(prog));
         railsActor.xInertia = 0.3;
@@ -593,7 +596,7 @@ public class App {
     private TPActor makePathAnchorActor(TPProgram prog, TPForm pathForm) {
         TPActor railsActor = new TPActor(pathForm);
         railsActor.name = "path-anchor";
-        railsActor.setColorGetter(TPFactory.randColorGetter());
+        railsActor.setColorGetter(TPFactory.randColorGetterDynamic());
         railsActor.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
         railsActor.setPos(TPFactory.randPos(prog));
         railsActor.xInertia = 0.3;
@@ -629,18 +632,16 @@ public class App {
         TPActor actor = makeKnobblyStickActorWithKeyPart(prog);
 
         TPForm form = actor.getForm();
-        int numLines = form.numLines();
-        int halfWay = numLines / 2;
-        for (int i = 0; i < numLines; i++) {
+        int numNodes = form.numNodes();
+        int halfWay = numNodes / 2;
+        for (int i = 0; i < numNodes; i++) {
             // add bristles to odd numbered lines
             if (i % 2 == 1) {
-                TPLine ln = form.getLine(i);
-
                 TPActor child = new TPActor(TPFactory.singleLineForm(TPFactory.NEARLY_ZERO,
                                                                      TPFactory.NEARLY_ZERO,
                                                                      bristleLength,
                                                                      TPFactory.NEARLY_ZERO));
-                child.angle = Math.random() * Math.PI;
+                child.angle = Math.random() * (Math.PI * 2);
                 if (symmetrical && i >= halfWay) {
                     child.angleInertia = -rotationSpeed;
                 } else {
@@ -648,8 +649,7 @@ public class App {
                 }
 
                 PointAnchor anchor = new PointAnchor();
-                anchor.setAnchor(ln, form);
-
+                anchor.setAnchor(form.getNode(i));
                 child.addBehaviour(anchor);
                 actor.addChild(child);
             }
@@ -664,10 +664,10 @@ public class App {
         int numSections = 4;
 
         TPForm form = knobblyStickForm(length, width, numSections);
+        TPFactory.setStrongWithRandomKeyLink(form);
         TPActor a = new TPActor(form);
         a.name = "knobbly stick (" + numSections + " sections)";
-        TPFactory.setStrongWithRandomKeyLine(a);
-        a.setColorGetter(TPFactory.randColorGetter());
+        a.setColorGetter(TPFactory.randColorGetterDynamic());
         a.setBoundaryBehaviour(TPActor.BoundaryBehaviour.WRAP_PARTS_AT_BOUNDS);
         // random angle and heading
         a.angle = Math.random() * Math.PI;
@@ -729,10 +729,10 @@ public class App {
                                                               TPFactory.NEARLY_ZERO,
                                                               jointLen,
                                                               TPFactory.NEARLY_ZERO));
-        child1.setColorGetter(TPFactory.randColorGetter());
+        child1.setColorGetter(TPFactory.randColorGetterDynamic());
         child1.angleInertia = Math.random() * 0.01;
         PointAnchor anchor1 = new PointAnchor();
-        anchor1.setAnchor(baseActor.getForm().getLine(0), baseActor.getForm());
+        anchor1.setAnchor(baseActor.getForm().getNode(0));
         child1.addBehaviour(anchor1);
         baseActor.addChild(child1);
 
@@ -740,10 +740,10 @@ public class App {
                                                               TPFactory.NEARLY_ZERO,
                                                               jointLen,
                                                               TPFactory.NEARLY_ZERO));
-        child2.setColorGetter(TPFactory.randColorGetter());
+        child2.setColorGetter(TPFactory.randColorGetterDynamic());
         child2.angleInertia = Math.random() * 0.01;
         PointAnchor anchor2 = new PointAnchor();
-        anchor2.setAnchor(child1.getForm().getLine(0), child1.getForm(), false);
+        anchor2.setAnchor(child1.getForm().getNode(1));
         child2.addBehaviour(anchor2);
         child1.addChild(child2);
 
@@ -770,11 +770,11 @@ public class App {
         sky.x = 0.1;
         sky.y = 0.1;
         sky.name = "sky";
-        TPLine skyLine = TPFactory.lineStrong(0, top, width, top, ColorMono.WHITE);
+        TPLink skyLine = TPFactory.linkStrong(0, top, width, top, ColorMono.WHITE);
         sky.getForm().addPart(skyLine);
         Spawning raining = new Spawning();
         raining.setArchetype(new TPActor(TPFactory.singleLineFormHoriz(50)));
-        raining.setOriginLine(skyLine);
+        raining.setOrigin(skyLine);
         raining.setRelativeAngle(1.0);
         raining.setRelativeRotation(0.25);
         raining.setInterval(25);
@@ -784,12 +784,12 @@ public class App {
         floor.x = 0.1;
         floor.y = 0.1;
         floor.name = "floor";
-        floor.getForm().addPart(TPFactory.lineStrong(0, bot, width, bot,
+        floor.getForm().addPart(TPFactory.linkStrong(0, bot, width, bot,
                                                      ColorMono.GREEN));
         for (int i = 0; i < 20; i++) {
             double x = Math.random() * width;
             double y = Math.random() * 100;
-            floor.getForm().addPart(TPFactory.lineStrong(x, bot, x, bot - y,
+            floor.getForm().addPart(TPFactory.linkStrong(x, bot, x, bot - y,
                                                          ColorMono.GREEN));
         }
 

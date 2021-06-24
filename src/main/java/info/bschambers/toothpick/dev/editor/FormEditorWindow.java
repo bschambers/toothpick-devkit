@@ -3,8 +3,8 @@ package info.bschambers.toothpick.dev.editor;
 import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.actor.TPActor;
 import info.bschambers.toothpick.actor.TPForm;
-import info.bschambers.toothpick.actor.TPLine;
-import info.bschambers.toothpick.geom.Line;
+import info.bschambers.toothpick.actor.TPLink;
+import info.bschambers.toothpick.geom.Node;
 import info.bschambers.toothpick.geom.Pt;
 import info.bschambers.toothpick.ui.swing.Gfx;
 import java.awt.Color;
@@ -173,11 +173,13 @@ public class FormEditorWindow extends JFrame
         mode = Mode.PARTS;
         selectionActive = false;
         handles.clear();
-        for (int p = 0; p < getForm().numParts(); p++) {
-            if (getForm().getPart(p) instanceof TPLine) {
-                handles.add(new LineEditor((TPLine) getForm().getPart(p)));
-            }
-        }
+        // for (int p = 0; p < getForm().numParts(); p++) {
+        //     if (getForm().getPart(p) instanceof TPLine) {
+        //         handles.add(new LineEditor((TPLine) getForm().getPart(p)));
+        //     }
+        // }
+        for (int i = 0; i < getForm().numLinks(); i++)
+            handles.add(new LineEditor(getForm().getLink(i)));
         updateView();
     }
 
@@ -185,12 +187,15 @@ public class FormEditorWindow extends JFrame
         mode = Mode.VERTICES;
         selectionActive = false;
         handles.clear();
-        for (int p = 0; p < getForm().numParts(); p++) {
-            if (getForm().getPart(p) instanceof TPLine) {
-                TPLine tpl = (TPLine) getForm().getPart(p);
-                handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.START));
-                handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.END));
-            }
+        for (int p = 0; p < getForm().numLinks(); p++) {
+            TPLink ln = getForm().getLink(p);
+            handles.add(new LineVertexEditor(ln, LineVertexEditor.Vertex.START));
+            handles.add(new LineVertexEditor(ln, LineVertexEditor.Vertex.END));
+            // if (getForm().getPart(p) instanceof TPLine) {
+            //     TPLine tpl = (TPLine) getForm().getPart(p);
+            //     handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.START));
+            //     handles.add(new LineVertexEditor(tpl, LineVertexEditor.Vertex.END));
+            // }
         }
         updateView();
     }
@@ -289,10 +294,11 @@ public class FormEditorWindow extends JFrame
                 double y1 = mark.y;
                 double x2 = point.x;
                 double y2 = point.y;
-                Line ln = new Line(x1, y1, x2, y2);
+                // Line ln = new Line(x1, y1, x2, y2);
                 System.out.println("new line: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
-                TPLine tpl = new TPLine(ln);
-                getForm().addPart(tpl);
+                // TPLine tpl = new TPLine(ln);
+                // getForm().addPart(tpl);
+                getForm().addLinkReuseNodes(x1, y1, x2, y2);
                 actorEd.getActor().updateForm();
                 updateView();
             }
@@ -302,11 +308,15 @@ public class FormEditorWindow extends JFrame
             double yy = point.y;
             geometry.xOffset += xx;
             geometry.yOffset += yy;
-            for (int p = 0; p < getForm().numParts(); p++) {
-                if (getForm().getPart(p) instanceof TPLine) {
-                    TPLine tpl = (TPLine) getForm().getPart(p);
-                    tpl.setArchetype(tpl.getArchetype().shift(-xx, -yy));
-                }
+            for (int i = 0; i < getForm().numNodes(); i++) {
+                Node n = getForm().getNode(i);
+                n.setArchetype(n.getXArchetype() - xx,
+                               n.getYArchetype() - yy);
+
+                // if (getForm().getPart(p) instanceof TPLine) {
+                //     TPLine tpl = (TPLine) getForm().getPart(p);
+                //     tpl.setArchetype(tpl.getArchetype().shift(-xx, -yy));
+                // }
             }
             actorEd.getActor().updateForm();
             updateView();

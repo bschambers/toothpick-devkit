@@ -4,7 +4,7 @@ import info.bschambers.toothpick.TPGeometry;
 import info.bschambers.toothpick.actor.TPExplosion;
 import info.bschambers.toothpick.actor.TPForm;
 import info.bschambers.toothpick.actor.TPImagePart;
-import info.bschambers.toothpick.actor.TPLine;
+import info.bschambers.toothpick.actor.TPLink;
 import info.bschambers.toothpick.actor.TPPart;
 import info.bschambers.toothpick.actor.TPTextPart;
 import info.bschambers.toothpick.geom.Geom;
@@ -50,9 +50,7 @@ public final class EditorGfx {
     public static void formArchetype(Graphics g, TPGeometry geom, TPForm form) {
         for (int i = 0; i < form.numParts(); i++) {
             TPPart part = form.getPart(i);
-            if (part instanceof TPLine) {
-                tpLineArchetype(g, geom, (TPLine) part);
-            } else if (part instanceof TPExplosion) {
+            if (part instanceof TPExplosion) {
                 Gfx.explosion(g, geom, (TPExplosion) part);
             } else if (part instanceof TPTextPart) {
                 Gfx.text(g, geom, (TPTextPart) part);
@@ -60,11 +58,16 @@ public final class EditorGfx {
                 Gfx.image(g, geom, (TPImagePart) part);
             }
         }
+
+        for (int i = 0; i < form.numLinks(); i++) {
+            tpLinkArchetype(g, geom, form.getLink(i));
+        }
     }
 
-    public static void tpLineArchetype(Graphics g, TPGeometry geom, TPLine tpl) {
-        Gfx.line(g, geom, Gfx.getStrokeForLineStrength(geom, tpl),
-                 tpl.getArchetype().start, tpl.getArchetype().end);
+    public static void tpLinkArchetype(Graphics g, TPGeometry geom, TPLink link) {
+        Gfx.line(g, geom, Gfx.getStrokeForLineStrength(geom, link.getStrength()),
+                 link.getStartNode().getXArchetype(), link.getStartNode().getYArchetype(),
+                 link.getEndNode().getXArchetype(), link.getEndNode().getYArchetype());
     }
 
 }

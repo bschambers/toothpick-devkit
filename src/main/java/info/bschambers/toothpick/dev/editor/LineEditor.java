@@ -1,16 +1,17 @@
 package info.bschambers.toothpick.dev.editor;
 
-import info.bschambers.toothpick.actor.TPLine;
+import info.bschambers.toothpick.actor.TPLink;
 import info.bschambers.toothpick.geom.Line;
 import info.bschambers.toothpick.geom.Pt;
+import info.bschambers.toothpick.geom.Geom;
 
 public class LineEditor extends EditorHandle {
 
-    private TPLine tpl;
+    private TPLink link;
 
-    public LineEditor(TPLine tpl) {
-        this.tpl = tpl;
-        Pt center = tpl.getArchetype().center();
+    public LineEditor(TPLink link) {
+        this.link = link;
+        Pt center = getArchetypeCenter(link);
         setPosition((int) center.x, (int) center.y);
     }
 
@@ -20,11 +21,20 @@ public class LineEditor extends EditorHandle {
      */
     @Override
     public void update() {
-        Pt center = tpl.getArchetype().center();
+        Pt center = getArchetypeCenter(link);
         double xx = x - center.x;
         double yy = y - center.y;
-        Line archetype = tpl.getArchetype();
-        tpl.setArchetype(archetype.shift(xx, yy));
+        // Line archetype = tpl.getArchetype();
+        // tpl.setArchetype(archetype.shift(xx, yy));
+        link.getStartNode().setArchetype(link.getStartNode().getX() + xx,
+                                         link.getStartNode().getY() + yy);
+        link.getEndNode().setArchetype(link.getEndNode().getX() + xx,
+                                       link.getEndNode().getY() + yy);
+    }
+
+    private Pt getArchetypeCenter(TPLink ln) {
+	return new Pt(Geom.midVal(ln.getStartNode().getXArchetype(), ln.getEndNode().getXArchetype()),
+                      Geom.midVal(ln.getStartNode().getYArchetype(), ln.getEndNode().getYArchetype()));
     }
 
 }
