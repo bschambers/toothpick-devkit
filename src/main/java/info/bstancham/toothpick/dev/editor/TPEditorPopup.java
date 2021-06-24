@@ -1,4 +1,4 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;

@@ -1,9 +1,9 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
-import info.bschambers.toothpick.actor.TPLink;
-import info.bschambers.toothpick.geom.Line;
-import info.bschambers.toothpick.geom.Pt;
-import info.bschambers.toothpick.geom.Geom;
+import info.bstancham.toothpick.actor.TPLink;
+import info.bstancham.toothpick.geom.Line;
+import info.bstancham.toothpick.geom.Pt;
+import info.bstancham.toothpick.geom.Geom;
 
 public class LineEditor extends EditorHandle {
 

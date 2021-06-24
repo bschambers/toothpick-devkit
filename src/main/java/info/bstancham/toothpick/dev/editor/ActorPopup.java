@@ -1,6 +1,6 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
-import info.bschambers.toothpick.actor.TPActor;
+import info.bstancham.toothpick.actor.TPActor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;

@@ -31,5 +31,5 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClassName = 'info.bschambers.toothpick.dev.App'
+    mainClassName = 'info.bstancham.toothpick.dev.App'
 }

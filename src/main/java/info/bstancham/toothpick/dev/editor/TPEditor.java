@@ -1,10 +1,10 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
-import info.bschambers.toothpick.TPGeometry;
-import info.bschambers.toothpick.TPProgram;
-import info.bschambers.toothpick.actor.TPActor;
-import info.bschambers.toothpick.ui.swing.Gfx;
-import info.bschambers.toothpick.ui.swing.TPSwingUI;
+import info.bstancham.toothpick.TPGeometry;
+import info.bstancham.toothpick.TPProgram;
+import info.bstancham.toothpick.actor.TPActor;
+import info.bstancham.toothpick.ui.swing.Gfx;
+import info.bstancham.toothpick.ui.swing.TPSwingUI;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Insets;

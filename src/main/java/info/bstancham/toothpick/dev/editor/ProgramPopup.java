@@ -1,4 +1,4 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
 public class ProgramPopup extends TPEditorPopup {
 

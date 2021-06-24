@@ -1,4 +1,4 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;

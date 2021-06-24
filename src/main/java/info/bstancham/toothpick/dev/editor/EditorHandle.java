@@ -1,6 +1,6 @@
-package info.bschambers.toothpick.dev.editor;
+package info.bstancham.toothpick.dev.editor;
 
-import info.bschambers.toothpick.TPGeometry;
+import info.bstancham.toothpick.TPGeometry;
 import java.awt.Color;
 import java.awt.Rectangle;
 
